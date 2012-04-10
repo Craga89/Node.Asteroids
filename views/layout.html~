@@ -1,0 +1,26 @@
+!!! 5
+html
+	head
+		title= title
+		meta(charset='utf-8')
+		link(rel='stylesheet', href='/css/style.css')
+	body
+
+		header
+			#{title}
+
+		!= body
+
+		footer
+
+		script(src='/js/common/glmatrix.min.js')
+		script(src='/js/common/timer.js')
+		script(src='/js/common/player.js')
+		script(src='/js/common/engine.js')
+
+		script(src='/js/common/sequence.js')
+		script(src='/js/client/socket.io.js')
+		script(src='/js/client/renderer.js')
+		script(src='/js/client/sprite.js')
+		script(src='/js/client/input.js')
+		script(src='/js/client/client.js')
