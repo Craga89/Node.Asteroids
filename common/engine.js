@@ -71,12 +71,13 @@
 	};
 
 	Game.prototype.computeState = function(delta) {
-		var state = this.state,
+		var game = this,
+			state = this.state,
 			entities = state.entities,
 			entityCount = entities.length,
  			i = entities.length, k = 0, j,
 			entity, entity2, outside, velocity,
-			commands, command,
+			commands, command, timer,
 			newEntities = [], newMap = {};
 
 		// Reset the delta state
@@ -96,7 +97,19 @@
 			}
 
 			// Check if player is shooting and produce bullet
-			if(entity.shooting) { this.shoot(entity); }
+			timer = entity._shootTimer;
+			if(entity.shooting) {
+				// Setup timer if not already
+				if(!timer) {
+					entity._shootTimer = new Timer(entity.shootRate, function(date) {
+						game.shoot(this);
+					});
+				}
+
+				// Start it and fire initial shot}
+				entity._shootTimer.start(0, entity, !!timer);
+			}
+			else { timer && timer.stop(); }
 		}
 
 		// Check for intersections and world boundaries
@@ -133,7 +146,7 @@
 
 			// Check for collisions with other objects
 			for(j = i + 1; j < entityCount; j++) {
-				if(!(entity2 = entities[j])) { continue; }
+				if(!(entity2 = entities[j]) || entity2.remove) { continue; }
 
 				// If two players or a player and another players bullet are colliding...
 				if(entity.type+entity2.type !== 'bulletbullet' &&
@@ -221,7 +234,7 @@
 			bullet = player === entity ? entity2 : entity;
 
 		// Reduce shield strength until zero...
-		player.shield -= bullet.strength;
+		player.shield -= bullet.strength * player.shieldQuality;
 		if(player.shield < 0) {
 			player.shield = 0.1;
 

@@ -20,7 +20,7 @@
 
 		this.radius = 2;
 		this.angle = params.angle;
-		this.strength = 5;
+		this.strength = 12;
 		
 		this.remove = params.remove || false;
 	};

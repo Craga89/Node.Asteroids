@@ -1,45 +1,47 @@
 (function(exports) {
 
-	// Grab microtime if possible
-	if(typeof require !== 'undefined') {
-		var mt = require('microtime');
-	}
-
 	function Timer(interval, callback) {
 		this.interval = interval;
 		this.callback = callback;
 
-		this.tick = null;
+		this._tick = null;
+		this._on = false;
 	};
 
-	Timer.prototype.getTime = function() {
-		return mt ? mt.now() / 1000 : Date.now();
-	}
+	Timer.prototype.start = function(skew, scope, immediate) {
+		if(this._on) { return; }
 
-	Timer.prototype.start = function(skew) {
-		var timer = this,
-			callback = this.callback,
+		var callback = this.callback,
 			interval = this.interval,
 			lastUpdate;
 
 		// Setup timer and last update
 		skew = skew || 0;
-		lastUpdate = this.getTime() - skew;
+		lastUpdate = Date.now() - skew;
+
+		// If immediate, call it now
+		if(immediate) { callback(lastUpdate); }
 
 		// Setup an accurate timer
-		this.tick = setInterval(function() {
-			var date = timer.getTime() - skew;
+		this._tick = setInterval(function() {
+			var date = Date.now() - skew;
 			if (date - lastUpdate >= interval) {
 				callback(date);
 				lastUpdate += interval;
 			}
 		}, 1);
 
+		// Set flag
+		this._on = true;
+
 		return this;
 	}
 
+	Timer.prototype.started = function() { return this._on; }
+
 	Timer.prototype.stop = function() {
-		clearInterval(this.tick);
+		clearInterval(this._tick);
+		this._on = false;
 
 		return this;
 	}

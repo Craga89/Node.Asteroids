@@ -105,15 +105,13 @@
 
 		// Render player#
 		ctx.save();
-		ctx.strokeStyle = 'black';
-		ctx.lineWidth = '1px';
 		ctx.rotate(player.angle);
-		ctx.fillStyle = isMe ? 'green' : 'red';
 		ctx.beginPath();
 		ctx.moveTo(0, 10); ctx.lineTo(6, -8);
 		ctx.lineTo(0, 0); ctx.lineTo(-6, -8);
 		ctx.closePath();
-		ctx.stroke();
+		ctx.fillStyle = isMe ? 'green' : 'red';
+		ctx.fill();
 		ctx.restore();
 
 		// Render player shield
@@ -144,9 +142,10 @@
 	}
 
 	Renderer.prototype._renderBullet = function(bullet) {
-		var ctx = this.ctx;
+		var ctx = this.ctx,
+			mine = bullet.owner === game.me.id;
 
-		ctx.fillStyle = 'red';
+		ctx.fillStyle = mine ? 'green' : 'red';
 		ctx.rotate(bullet.angle);
 		ctx.beginPath();
 		ctx.arc(0, 0, 2, 0, 2 * Math.PI, true);

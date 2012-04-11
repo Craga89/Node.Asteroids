@@ -1,9 +1,9 @@
 (function(exports, CLIENT) {
-	var defaults,
-		header = CLIENT ? document.querySelector('header') : null;
-
-	// Import vec3 class if needed
-	if(!CLIENT) { require('./glmatrix.min.js'); }
+	// Import modules as needed
+	if(!CLIENT) {
+		require('./glmatrix.min.js');
+		Timer = require('./timer').Timer;
+	}
 
 	/**
 	 * Player class
@@ -11,29 +11,40 @@
 	 * Represent an object within the game
 	 */
 	function Player(params) {
+		var player = this;
 		params = params || defaults;
 
+		// Main properties
 		this.id = params.id;
 		this.type = 'player';
 		this.bot = params.bot || false;
 
+		// Vectors
 		this.pos = vec3.create(params.pos);
 		this.lastPos = vec3.create(params.lastPos || params.pos);
 		this.velocity = vec3.create(params.velocity || [ 0.15, 0.15, 0 ]);
 		this.acceleration = vec3.create(params.acceleration || [0.99, 0.99, 0 ]);
 		this.thrust = params.thrust || 0;
 
-		this.radius = params.radius || 15;
+		// Angle properties
 		this.rotateBy = params.rotate || 0;
 		this.angle = params.angle || 0;
 
+		// Health and shield properties
 		this.health = params.health || 100;
+		this.radius = params.radius || 15;
 		this.shield = params.shield || 100;
+		this.shieldQuality = params.shieldQuality || 0.8;
 		this.shieldRegen = 1.0035;
 
+		// Reound propeties
 		this.rebound = 0.96;
 
+		// Shooting properties
 		this.shooting = params.shooting || false;
+		this.shootRate = 150;
+
+		// Removal flag
 		this.remove = params.remove || false;
 	};
 
@@ -69,7 +80,7 @@
 	Player.prototype.toJSON = function() {
 		var copy = {}, prop;
 		for(var i in this) {
-			if(this.hasOwnProperty(i)) {
+			if(this.hasOwnProperty(i) && i[0] !== '_') {
 				prop = this[i];
 				copy[i] = prop.toJSON ? prop.toJSON() :
 					prop.buffer ? [prop[0], prop[1], prop[2]] :

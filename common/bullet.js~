@@ -12,6 +12,7 @@
 
 		this.id = params.id;
 		this.type = 'bullet';
+		this.owner = params.owner;
 
 		this.pos = vec3.create(params.pos);
 		this.lastPos = vec3.create(params.lastPos || params.pos);
