@@ -20,15 +20,20 @@
 		this.lastPos = vec3.create(params.lastPos || params.pos);
 		this.velocity = vec3.create(params.velocity || [ 0.15, 0.15, 0 ]);
 		this.acceleration = vec3.create(params.acceleration || [0.96, 0.96, 0 ]);
-		this.thrust = vec3.create(params.thrust);
+		this.thrust = params.thrust || 0;
 
-		this.radius = params.radius || 10;
+		this.radius = params.radius || 15;
+		this.rotateBy = params.rotate || 0;
 		this.angle = params.angle || 0;
 
-		this.mass = 10;
+		this.health = params.health || 100;
+		this.shield = params.shield || 100;
+		this.shieldRegen = 1.01;
+
 		this.rebound = 0.96;
 
-		this.remove = false;
+		this.shooting = params.shooting || false;
+		this.remove = params.remove || false;
 	};
 
 	Player.prototype.computeState = function(delta) {
@@ -41,11 +46,20 @@
 		// Set last pos
 		vec3.set(pos, this.lastPos);
 
-		// Calculate new velocity based on acceleration
-		console.log( vec3.str(thrust) )
+		// Add rotation
+		this.angle += (Math.PI / 8) * this.rotateBy;
+
+		// Calculate new velocity based on acceleration and thrust
 		vec3.multiply(vel, accel);
-		vec3.add(vel, thrust);
-		
+		vec3.add(vel, [
+			-Math.sin(this.angle) * this.thrust,
+			Math.cos(this.angle) * this.thrust,
+			0
+		]);
+
+		// Regenerate shield (maximum 100%)
+		this.shield *= this.shieldRegen;
+		if(this.shield > 100) { this.shield = 100; }
 
 		// Calculate new position based on velocity
 		vec3.add(pos, [ vel[0] * delta, vel[1] * delta, 0 ]);
@@ -65,32 +79,6 @@
 		return copy;
 	};
 
-	Player.prototype.handleCmd = function(cmd) {
-		this.move(cmd);
-	}
-	
-/*
-		'87' : 1, '38': 1, // Up
-		'83' : 2, '40': 2, // Down
-		'65' : 3, '37': 3, // Left
-		'68' : 4, '39': 4, // Right
-*/
-	Player.prototype.move = function(data) {
-		this.thrust[0] =
-			data.left === 1 ? -0.05 :
-			data.right === 1 ? 0.05 :
-			data.right === 0 || data.left === 0 ? 0 :
-			this.thrust[0];
-
-		this.thrust[1] =
-			data.up === 1 ? -0.05 :
-			data.down === 1 ? 0.05 : 0;
-	}
-
-	Player.prototype.rotate = function(radians) {
-		this.angle += radians;
-	};
-
 	Player.prototype.distanceTo = function(entity) {
 		return vec3.dist(this.pos, entity.pos);
 	};
@@ -98,6 +86,44 @@
 	Player.prototype.intersects = function(entity) {
 		return this.distanceTo(entity) < (this.radius + entity.radius);
 	};
+
+	Player.prototype.overlap = function(entity) {
+		return this.radius + entity.radius - this.distanceTo(entity);
+	};
+
+	Player.prototype.transferArea = function(amount) {
+		var sign = amount < 0 ? -1 : 1;
+		this.radius += sign * Math.sqrt( Math.abs(amount) / Math.PI );
+
+		return this;
+	};
+
+	Player.prototype.handleCmd = function(cmd) {
+		// Handle shooting
+		if(!isNaN(cmd.space)) { this.shoot(cmd.space); }
+
+		// Rotate on left/right
+		if(!isNaN(cmd.left) || !isNaN(cmd.right)) {
+			this.rotate(cmd.left ? -0.35 : cmd.right ? 0.35 : 0);
+		}
+
+		// Thrust on up/down
+		if(!isNaN(cmd.up)) {
+			this.move(cmd.up ? 0.02 : 0);
+		}
+	}
+
+	Player.prototype.move = function(amount) {
+		this.thrust = amount;
+	};
+
+	Player.prototype.rotate = function(value) {
+		this.rotateBy = value;
+	};
+
+	Player.prototype.shoot = function(bool) {
+		this.shooting = !!bool;
+	}
 
 	Player.prototype.outsideWorld = function(width, height) {
 		var r = this.radius,

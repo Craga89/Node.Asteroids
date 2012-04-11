@@ -11,31 +11,44 @@ var level = new Level({
 	height: game.HEIGHT
 });
 
+// Fake lag
+var fakeLag = 0;
+
 // Set low log level to get rid of debug messages
 io.set('log level', 1);
 
 // Load the generated level game state
-game.load( level.generate() );
+game.load( level.generate(), false );
 
 // Set tick callback
 game.onTick = function() {
-	io.sockets.emit('state', {
-		timeStamp: (Date.now()).valueOf(),
+	var data = {
+		timeStamp: Date.now(),
 		state: game.save()
-	});
+	}
+
+	// Send the message
+	function send() { io.sockets.emit('state', data); }
+	if(fakeLag) { setTimeout(send, fakeLag); }
+	else { send(); }
 }
 
 // Initialise game loop
 game.start();
 
+// Add some random players
+game.join('Bot1'); game.join('Bot2');
+
 // Setup connection handler
 io.sockets.on('connection', function(socket) {
 	var timeSync, player = null;
 
+	// Emit start event
 	socket.emit('start', {
 		state: game.save()
 	});
 
+	// Send state on request
 	socket.on('state', function() {
 		socket.emit('state', {
 			state: game.save()
@@ -46,7 +59,7 @@ io.sockets.on('connection', function(socket) {
 		console.log('revc join', data);
 
 		// Make sure player doesn't already exist
-		if(player && game.playerExists(player.id) > -1) {
+		if(game.playerExists(data.name)) {
 			socket.emit('error', {
 				code: err.NICKINUSE,
 				error: 'Name already in use'
@@ -57,7 +70,7 @@ io.sockets.on('connection', function(socket) {
 
 		// Join the game and apply timeStamp
 		data.player = player = game.join(data.name);
-		data.timeStamp = new Date();
+		data.timeStamp = Date.now();
 
 		// Broadcast new player to others
 		socket.broadcast.emit('join', data);
@@ -80,12 +93,9 @@ io.sockets.on('connection', function(socket) {
 
 	/**
 	 * Movement actions
+	 *   Queue commands upon recieval
 	 */
-	socket.on('usercmd', function(data, ack) {
-		// Queue the commands
+	socket.on('usercmd', function(data) {
 		game.queueCommand(data.id, data.cmd);
-
-		// Acknowledge receipt
-		ack();
 	});
 });

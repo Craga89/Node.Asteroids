@@ -16,7 +16,7 @@ app.configure(function(){
 	app.set('view engine', 'html');
 	app.register('.html', require('jade'));
 
-	app.use(express.logger());
+	//app.use(express.logger());
 	app.use(express.bodyParser());
 	app.use(express.methodOverride());
 	app.use(express.cookieParser());

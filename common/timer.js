@@ -14,11 +14,11 @@
 
 		// Setup timer and last update
 		skew = skew || 0;
-		lastUpdate = (new Date()).valueOf() - skew;
+		lastUpdate = Date.now() - skew;
 
 		// Setup an accurate timer
 		this.tick = setInterval(function() {
-			var date = (new Date()).valueOf() - skew;
+			var date = Date.now() - skew;
 			if (date - lastUpdate >= interval) {
 				callback(date);
 				lastUpdate += interval;
