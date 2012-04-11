@@ -1,0 +1,49 @@
+(function(exports) {
+
+	// Grab microtime if possible
+	if(typeof require !== 'undefined') {
+		var mt = require('microtime');
+	}
+
+	function Timer(interval, callback) {
+		this.interval = interval;
+		this.callback = callback;
+
+		this.tick = null;
+	};
+
+	Timer.prototype.getTime = function() {
+		return mt ? mt.now() / 1000 : Date.now();
+	}
+
+	Timer.prototype.start = function(skew) {
+		var timer = this,
+			callback = this.callback,
+			interval = this.interval,
+			lastUpdate;
+
+		// Setup timer and last update
+		skew = skew || 0;
+		lastUpdate = this.getTime() - skew;
+
+		// Setup an accurate timer
+		this.tick = setInterval(function() {
+			var date = timer.getTime() - skew;
+			if (date - lastUpdate >= interval) {
+				callback(date);
+				lastUpdate += interval;
+			}
+		}, 1);
+
+		return this;
+	}
+
+	Timer.prototype.stop = function() {
+		clearInterval(this.tick);
+
+		return this;
+	}
+
+	exports.Timer = Timer;
+
+})(typeof global === 'undefined' ? window : exports);

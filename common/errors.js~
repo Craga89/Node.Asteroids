@@ -1,0 +1,10 @@
+(function() {
+	
+	var codes = {
+		NICKINUSE: 1
+	}
+
+	// Expose as needed
+	if(window) { window.err = codes; }
+	else { module.exports = codes; }
+})();
