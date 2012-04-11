@@ -15,11 +15,12 @@
 
 		this.id = params.id;
 		this.type = 'player';
+		this.bot = params.bot || false;
 
 		this.pos = vec3.create(params.pos);
 		this.lastPos = vec3.create(params.lastPos || params.pos);
 		this.velocity = vec3.create(params.velocity || [ 0.15, 0.15, 0 ]);
-		this.acceleration = vec3.create(params.acceleration || [0.96, 0.96, 0 ]);
+		this.acceleration = vec3.create(params.acceleration || [0.99, 0.99, 0 ]);
 		this.thrust = params.thrust || 0;
 
 		this.radius = params.radius || 15;
@@ -28,7 +29,7 @@
 
 		this.health = params.health || 100;
 		this.shield = params.shield || 100;
-		this.shieldRegen = 1.01;
+		this.shieldRegen = 1.0035;
 
 		this.rebound = 0.96;
 
@@ -89,13 +90,6 @@
 
 	Player.prototype.overlap = function(entity) {
 		return this.radius + entity.radius - this.distanceTo(entity);
-	};
-
-	Player.prototype.transferArea = function(amount) {
-		var sign = amount < 0 ? -1 : 1;
-		this.radius += sign * Math.sqrt( Math.abs(amount) / Math.PI );
-
-		return this;
 	};
 
 	Player.prototype.handleCmd = function(cmd) {

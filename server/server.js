@@ -37,7 +37,12 @@ game.onTick = function() {
 game.start();
 
 // Add some random players
-game.join('Bot1'); game.join('Bot2');
+game.addBot('Bot1'); game.addBot('Bot2');
+
+setInterval(function() {
+	game.addBot('Bot' + Math.floor(Math.random() * 200))
+},
+5000);
 
 // Setup connection handler
 io.sockets.on('connection', function(socket) {

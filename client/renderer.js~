@@ -99,6 +99,8 @@
 	Renderer.prototype._renderPlayer = function(player) {
 		var ctx = this.ctx,
 			isMe = game.me === player,
+			radius = player.radius,
+			r2 = radius / 2,
 			shield = (player.shield / 100);
 
 		// Render player#
@@ -118,20 +120,27 @@
 		if(player.shield > 0) {
 			ctx.lineWidth = shield * 4;
 			ctx.strokeStyle = 'rgb('+
-				Math.floor(255 - (shield * 255)) + ', 0, ' +
+				Math.floor(255 - (shield * 255)) + ', ' +
+				Math.floor(80 - (shield * 80)) + ', ' +
 				Math.floor(shield * 255) +
 			')';
 			ctx.beginPath();
-			ctx.arc(0, 0, player.radius, 0, 2 * Math.PI, true);
+			ctx.arc(0, 0, radius, 0, 2 * Math.PI, true);
 			ctx.closePath();
 			ctx.stroke();
 		}
 
-		// Render the player name
+		// Render the player name and details
 		ctx.font = '8pt monospace';
 		ctx.fillStyle = 'black';
 		ctx.textAlign = 'center';
-		ctx.fillText(player.id, 0, -player.radius - 3);
+		ctx.fillText(player.id, 0, -radius - r2);
+
+		ctx.font = '7pt monospace';
+		ctx.fillStyle = 'blue';
+		ctx.fillText(Math.floor(player.shield) + '%', -radius, radius + ctx.lineWidth);
+		ctx.fillStyle = 'red';
+		ctx.fillText(Math.floor(player.health) + '%', radius, radius + ctx.lineWidth);
 	}
 
 	Renderer.prototype._renderBullet = function(bullet) {
