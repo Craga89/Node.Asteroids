@@ -1,5 +1,7 @@
 (function(exports, CLIENT) {
-	// Import vec3 class if needed
+	var Entity = (CLIENT ? exports : require('./entity')).Entity;
+
+	// Import modules as needed
 	if(!CLIENT) { require('./glmatrix.min.js'); }
 
 	/**
@@ -20,10 +22,20 @@
 
 		this.radius = 2;
 		this.angle = params.angle;
-		this.strength = 12;
+		this.strength = 30;
 		
 		this.remove = params.remove || false;
 	};
+
+	// Inherit from Entity
+	Bullet.prototype = new Entity();
+	Bullet.prototype._super = Entity.prototype;
+	Bullet.prototype.constructor = Bullet;
+
+	// Merge properties
+	Bullet._mergeProps = Entity._mergeProps.concat([
+		'owner', 'radius', 'angle', 'strength'
+	]);
 
 	Bullet.prototype.computeState = function(delta) {
 		var pos = this.pos,

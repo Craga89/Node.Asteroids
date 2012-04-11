@@ -1,9 +1,11 @@
 (function(exports, CLIENT) {
+	var Entity = (CLIENT ? exports : require('./entity')).Entity,
+		Sequence = (CLIENT ? exports : require('./sequence')).Sequence,
+		Timer = (CLIENT ? exports : require('./timer')).Timer,
+		Bullet = (CLIENT ? exports : require('./bullet')).Bullet;
+
 	// Import modules as needed
-	if(!CLIENT) {
-		require('./glmatrix.min.js');
-		Timer = require('./timer').Timer;
-	}
+	if(!CLIENT) { require('./glmatrix.min.js'); }
 
 	/**
 	 * Player class
@@ -34,8 +36,8 @@
 		this.health = params.health || 100;
 		this.radius = params.radius || 15;
 		this.shield = params.shield || 100;
-		this.shieldQuality = params.shieldQuality || 0.8;
-		this.shieldRegen = 1.0035;
+		this.shieldQuality = 0.5;
+		this.shieldRegen = 0.075;
 
 		// Reound propeties
 		this.rebound = 0.96;
@@ -47,6 +49,18 @@
 		// Removal flag
 		this.remove = params.remove || false;
 	};
+
+	// Inherit from Entity
+	Player.prototype = new Entity();
+	Player.prototype._super = Entity.prototype;
+	Player.prototype.constructor = Player;
+
+	// Merge properties
+	Player._mergeProps = Entity._mergeProps.concat([
+		'bot', 'thrust', 'rotateBy', 'angle', 'health',
+		'shield', 'shieldQuality', 'shieldRegen', 'rebound',
+		'shooting', 'shootRate'
+	]);
 
 	Player.prototype.computeState = function(delta) {
 		var pos = this.pos,
@@ -70,7 +84,7 @@
 		]);
 
 		// Regenerate shield (maximum 100%)
-		this.shield *= this.shieldRegen;
+		this.shield += this.shieldRegen;
 		if(this.shield > 100) { this.shield = 100; }
 
 		// Calculate new position based on velocity
@@ -89,18 +103,6 @@
 		}
 
 		return copy;
-	};
-
-	Player.prototype.distanceTo = function(entity) {
-		return vec3.dist(this.pos, entity.pos);
-	};
-
-	Player.prototype.intersects = function(entity) {
-		return this.distanceTo(entity) < (this.radius + entity.radius);
-	};
-
-	Player.prototype.overlap = function(entity) {
-		return this.radius + entity.radius - this.distanceTo(entity);
 	};
 
 	Player.prototype.handleCmd = function(cmd) {
@@ -128,22 +130,6 @@
 
 	Player.prototype.shoot = function(bool) {
 		this.shooting = !!bool;
-	}
-
-	Player.prototype.outsideWorld = function(width, height) {
-		var r = this.radius,
-			minX = this.pos[0] < r, maxX = this.pos[0] + r > width,
-			minY = this.pos[1] < r, maxY = this.pos[1] + r > height;
-
-		// If any of the conditions are true... return array
-		if(minX || maxX || minY || maxY) {
-			return [
-				minX ? -1 : maxX ? 1 : 0,
-				minY ? -1 : maxY ? 1 : 0
-			];
-		}
-
-		return false;
 	}
 
 	exports.Player = Player;

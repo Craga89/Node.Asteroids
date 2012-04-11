@@ -22,15 +22,12 @@ game.load( level.generate(), false );
 
 // Set tick callback
 game.onTick = function() {
-	var data = {
+	// Send game snapshot
+	io.sockets.emit('state', {
 		timeStamp: Date.now(),
-		state: game.save()
-	}
-
-	// Send the message
-	function send() { io.sockets.emit('state', data); }
-	if(fakeLag) { setTimeout(send, fakeLag); }
-	else { send(); }
+		state: game.save(),
+		callbacks: game.callbacks
+	});
 }
 
 // Initialise game loop
@@ -39,10 +36,12 @@ game.start();
 // Add some random players
 game.addBot('Bot1'); game.addBot('Bot2');
 
+/*
 setInterval(function() {
 	game.addBot('Bot' + Math.floor(Math.random() * 200))
 },
 5000);
+*/
 
 // Setup connection handler
 io.sockets.on('connection', function(socket) {

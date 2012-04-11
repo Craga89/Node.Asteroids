@@ -24,7 +24,8 @@ game.load( level.generate(), false );
 game.onTick = function() {
 	var data = {
 		timeStamp: Date.now(),
-		state: game.save()
+		state: game.save(),
+		callbacks: game.callbacks
 	}
 
 	// Send the message
@@ -39,10 +40,12 @@ game.start();
 // Add some random players
 game.addBot('Bot1'); game.addBot('Bot2');
 
+/*
 setInterval(function() {
-	game.addBot('Bot-' + Math.floor(Math.random() * 200))
+	game.addBot('Bot' + Math.floor(Math.random() * 200))
 },
 5000);
+*/
 
 // Setup connection handler
 io.sockets.on('connection', function(socket) {

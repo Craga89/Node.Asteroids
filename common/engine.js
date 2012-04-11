@@ -1,5 +1,6 @@
 (function(exports, CLIENT) {
-	var Timer = (CLIENT ? exports : require('./timer')).Timer,
+	var Sequence = (CLIENT ? exports : require('./sequence')).Sequence,
+		Timer = (CLIENT ? exports : require('./timer')).Timer,
 		Player = (CLIENT ? exports : require('./player')).Player,
 		Bullet = (CLIENT ? exports : require('./bullet')).Bullet;
 
@@ -26,7 +27,7 @@
 		this.stateBuffer = [];
 		this.updateCount = 0;
 
-		// User command buffers
+		// User command buffer
 		this.commandBuffer = {};
 
 		// Trackers
@@ -221,8 +222,8 @@
 
 		// Adjust shield strengths
 		effect = player.shield < 1 ? 'health' : 'shield';
-		player[effect] *= 1 - Math.abs(bci);
-		player2[effect] *= 1 - Math.abs(aci);
+		player[effect] -= 1 - Math.abs(bci) * 5;
+		player2[effect] -= 1 - Math.abs(aci) * 5;
 
 		// Scale velocity using impulse/forces above
 		vec3.scale(collision, bci - aci, player.velocity);
@@ -236,10 +237,10 @@
 		// Reduce shield strength until zero...
 		player.shield -= bullet.strength * player.shieldQuality;
 		if(player.shield < 0) {
-			player.shield = 0.1;
-
 			// Shield is down, take away health
-			player.health -= bullet.strength;
+			player.health -= bullet.strength - player.shield;
+
+			player.shield = 0;
 		}
 
 		// Remove bullet
@@ -299,7 +300,8 @@
 		var serialized = {
 			entities: [],
 			entityMap: {},
-			timeStamp: this.state.timeStamp
+			timeStamp: this.state.timeStamp,
+			callbacks: this.callbacks
 		},
 		entities = this.state.entities,
 		i = entities.length;
@@ -317,7 +319,7 @@
 	 * Load the game state.
 	 * @param {object} state JSON of the game state
 	 */
-	Game.prototype.load = function(state, overwrite) {
+	Game.prototype.load = function(state) {
 		var entities = state.entities,
 			entityMap = state.entityMap,
 			me, me2, i = -1, j,
@@ -328,7 +330,7 @@
 		len = stateBuffer.push(state);
 		if(len > (this.STATE_BUFFER_TIME / this.TICK_RATE)) { stateBuffer.shift(); }
 
-		// Correction is disabled, do a hard load (overwrite state)
+		// Setup new state
 		this.state = state = {
 			entities: [],
 			entityMap: {},
@@ -352,7 +354,26 @@
 				if(this.me && this.me.id === entity.id) { this.me = e; }
 			}
 		}
+	};
 
+
+	/**
+	 * Process a delta snapshot
+	 */
+	Game.prototype.delta = function(delta) {
+		var entities = this.state.entities,
+			deltaEntities = delta.entities,
+			entity, deltaEntity,
+			i = -1;
+
+		// Process entity changes
+		while(entities[++i]) {
+			if(!(deltaEntity = deltaEntities[ (entity = entities[i]).id ])) { continue; }
+
+			for(i in deltaEntity) {
+				
+			}
+		}
 	};
 
 	Game.prototype.entityExists = function(id) {
@@ -363,6 +384,16 @@
 		var entity = this.state.entities[ this.state.entityMap[id] ];
 		return entity && entity.type === 'player' ? entity : false;
 	}
+
+
+	/* Callbacks */
+	var noop = function() {}
+	Game.prototype.callbacks
+	Game.prototype.conFire = noop;
+	Game.prototype.onCollision = noop;
+	Game.prototype.onHit = noop;
+	Game.prototype.onDeath = noop;
+	
 
 	exports.Game = Game;
 

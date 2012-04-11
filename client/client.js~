@@ -84,8 +84,15 @@ socket.on('leave', function(data) {
 
 // Load game state when recieved
 socket.on('state', function(data) {
-	console.log(data.state.entities[0])
+	var callbacks = data.callbacks;
+	
+	// Load the game state
 	game.load(data.state);
+
+	// Fire callbacks
+	for(i in callbacks) {
+		
+	}
 });
 
 // Handle errors
