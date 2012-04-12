@@ -183,9 +183,9 @@
 					
 					// Handle different collision types
 					switch(entity.type+entity2.type) {
-						case 'playerbullet': entity.hit(entity2); break;
-						case 'bulletplayer': entity2.hit(entity); break;
-						case 'playerplayer': entity.collision(entity2); break;
+						case 'playerbullet': entity.handleHit(entity2); break;
+						case 'bulletplayer': entity2.handleHit(entity); break;
+						case 'playerplayer': entity.handleCollision(entity2); break;
 					}
 				}
 			}

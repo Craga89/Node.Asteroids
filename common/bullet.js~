@@ -45,15 +45,11 @@
 			vel = this.velocity,
 			outside, player;
 
-		// Set last pos
-		vec3.set(pos, this.lastPos);
-
 		// Calculate new position based on velocity
-		pos = vec3.create();
-		vec3.add(pos, [ vel[0] * delta, vel[1] * delta, 0 ], pos);
+		vec3.add(pos, [ vel[0] * delta, vel[1] * delta, 0 ]);
 
 		// Register delta changes
-		this._registerChange('pos', pos);
+		this._registerChange('pos');
 	};
 
 	Bullet.prototype.destroy = function() {

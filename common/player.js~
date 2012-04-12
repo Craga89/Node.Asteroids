@@ -99,8 +99,9 @@
 		this.adjustShield(this.shieldRegen);
 	};
 
-	Player.prototype.collision = function(player) {
-		var collision, distance, aci, bci, type;
+	
+	Player.prototype.handleCollision = function(player) {
+		var collision, distance, aci, bci;
 
 		/*
 		 * Calculate difference vector based on each entities position.
@@ -118,9 +119,8 @@
 		bci = vec3.dot(player.velocity, collision);
 
 		// Adjust shield strengths
-		type = this.shield < 1 ? 'adjustHealth' : 'adjustShield';
-		this[type](-((1 - Math.abs(bci)) * 15) );
-		player[type](-((1 - Math.abs(aci)) * 15) );
+		this.adjustShield( -((1 - Math.abs(bci)) * 15) );
+		player.adjustShield( -((1 - Math.abs(aci)) * 15) );
 
 		// Scale velocity using impulse/forces above
 		vec3.scale(collision, bci - aci, this.velocity);
@@ -131,28 +131,33 @@
 		player._registerChange('velocity');
 	};
 
-	Player.prototype.hit = function(bullet) {
+	Player.prototype.handleHit = function(bullet) {
 		var shield = this.shield;
 
 		// Reduce shield strength until zero...
 		this.adjustShield(-bullet.strength * this.shieldQuality);
-
-		// Shield is down, take away health and set shield to zero
-		if(this.shield <= 0) {
-			this.adjustHealth(-bullet.strength - shield);
-		}
 
 		// Remove bullet
 		bullet.destroy();
 	};
 
 	Player.prototype.adjustShield = function(amount) {
-		var shield = this.shield;
+		var shield = this.shield,
+			floored;
+		
+		// Adjust shield strength
+		floored = Math.floor(
+			this.shield = Math.max(Math.min(100, shield + amount), 0)
+		);
 
-		// Round it to one decimal place
-		this.shield = Math.max(Math.min(100, this.shield + amount), 0);
-		if(shield !== Math.floor(this.shield)) {
-			this._registerChange('shield', Math.floor(this.shield) );
+		// If the shield is down... hurt health!
+		if(floored <= 0) {
+			this.adjustHealth( -(shield - amount) );
+		}
+
+		// Inform game of strength change if there was any
+		if(Math.floor(shield) !== floored) {
+			this._registerChange('shield', floored);
 		}
 	}
 
