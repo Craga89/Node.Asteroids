@@ -12,9 +12,11 @@
 	 *
 	 * Represent an object within the game
 	 */
-	function Player(params) {
+	function Player(params, game) {
 		var player = this;
-		params = params || defaults;
+
+		// Internal properties
+		this._game = game;
 
 		// Main properties
 		this.id = params.id;
@@ -63,11 +65,15 @@
 	]);
 
 	Player.prototype.computeState = function(delta) {
-		var pos = this.pos,
+		var id = this.id,
+			pos = this.pos,
 			vel = this.velocity,
 			accel = this.acceleration,
 			thrust = this.thrust,
 			outside, player;
+
+		// If health is zero we're dead!
+		if(this.health <= 0) { this.destroy(); }
 
 		// Set last pos
 		vec3.set(pos, this.lastPos);
@@ -89,32 +95,74 @@
 
 		// Calculate new position based on velocity
 		vec3.add(pos, [ vel[0] * delta, vel[1] * delta, 0 ]);
+
+		// Register delta changes
+		this._registerChange('pos', pos);
+		this._registerChange('velocity', vel);
+		this._registerChange('angle', this.angle);
+		this._registerChange('shield', this.shield);
 	};
 
-	Player.prototype.toJSON = function() {
-		var copy = {}, prop;
-		for(var i in this) {
-			if(this.hasOwnProperty(i) && i[0] !== '_') {
-				prop = this[i];
-				copy[i] = prop.toJSON ? prop.toJSON() :
-					prop.buffer ? [prop[0], prop[1], prop[2]] :
-					prop;
-			}
+	Player.prototype.collision = function(player) {
+		var collision, distance, aci, bci, type;
+
+		/*
+		 * Calculate difference vector based on each entities position.
+		 * Scale the result by the combined radius of each object
+		 */
+		collision = vec3.subtract(this.pos, player.pos, vec3.create());
+		distance = vec3.length(collision);
+
+		// Make sure the distance is within bounds and normalize collision vector
+		if(distance === 0) { collision = vec3.create([ 1, 1, 0 ]); }
+		vec3.normalize(collision);
+
+		// Calculate impulses via dot product
+		aci = vec3.dot(this.velocity, collision);
+		bci = vec3.dot(player.velocity, collision);
+
+		// Adjust shield strengths
+		type = this.shield < 1 ? 'adjustHealth' : 'adjustShield';
+		this[type](- (1 - Math.abs(bci) * 5) );
+		player[type](- (1 - Math.abs(aci) * 5) );
+
+		// Scale velocity using impulse/forces above
+		vec3.scale(collision, bci - aci, this.velocity);
+		vec3.scale(collision, aci - bci, player.velocity);
+	};
+
+	Player.prototype.hit = function(bullet) {
+		// Reduce shield strength until zero...
+		this.adjustShield(-bullet.strength * this.shieldQuality);
+
+		// Shield is down, take away health and set shield to zero
+		if(this.shield < 0) {
+			this.adjustHealth(-bullet.strength);
 		}
 
-		return copy;
+		// Remove bullet
+		bullet.destroy();
 	};
 
-	Player.prototype.distanceTo = function(entity) {
-		return vec3.dist(this.pos, entity.pos);
-	};
+	Player.prototype.adjustShield = function(amount) {
+		this._registerChange('shield', (this.shield = Math.max(this.shield + amount, 0)));
+	}
 
-	Player.prototype.intersects = function(entity) {
-		return this.distanceTo(entity) < (this.radius + entity.radius);
-	};
+	Player.prototype.adjustHealth = function(amount) {
+		console.log(amount, this.health)
+		if(amount > this.health) {
+			this.destroy();
+		}
+		else {
+			this._registerChange('health', (this.health = Math.max(this.health + amount, 0)));
+		}
+	}
 
-	Player.prototype.overlap = function(entity) {
-		return this.radius + entity.radius - this.distanceTo(entity);
+	Player.prototype.destroy = function() {
+		this.health = this.shield = 0;
+		this.remove = true;
+
+		this._registerChange('remove', true);
 	};
 
 	Player.prototype.handleCmd = function(cmd) {
@@ -142,22 +190,6 @@
 
 	Player.prototype.shoot = function(bool) {
 		this.shooting = !!bool;
-	}
-
-	Player.prototype.outsideWorld = function(width, height) {
-		var r = this.radius,
-			minX = this.pos[0] < r, maxX = this.pos[0] + r > width,
-			minY = this.pos[1] < r, maxY = this.pos[1] + r > height;
-
-		// If any of the conditions are true... return array
-		if(minX || maxX || minY || maxY) {
-			return [
-				minX ? -1 : maxX ? 1 : 0,
-				minY ? -1 : maxY ? 1 : 0
-			];
-		}
-
-		return false;
 	}
 
 	exports.Player = Player;

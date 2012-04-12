@@ -3,19 +3,29 @@
 	if(!CLIENT) { require('./glmatrix.min.js'); }
 
 	/**
-	 * Entity class
-	 *
-	 * Represent an object within the game
+	 * Entity class - Represents an object within the game
 	 */
 	function Entity(params) {
-
+		this.deltaScope = 'entities';
 	};
 
-	// Merge properties
+	/**
+	 * This must be overriden
+	 */
+	Entity.prototype.computeState = function(delta) {};
+
+	/**
+	 * Determines which properties get merged when calling
+	 * the .merge() method below.
+	 */
 	Entity._mergeProps = ['id', 'type', 'pos', 'lastPos', 'velocity', 'acceleration', 'remove'];
 
 	/**
-	 * Special entity merge function
+	 * Merges two Entitys of the same constructor together.
+	 * 
+	 * Only properties defined in the constructors _mergeProps
+	 * array are copied over, due to the "caching" nature of this
+	 * function.
 	 */
 	Entity.prototype.merge = function(entity, callbacks) {
 		var cons = this.constructor,
@@ -44,32 +54,41 @@
 		cons._mergeFunc(this, entity, callbacks);
 	}
 
+	/**
+	 * Copies the Entity to a JSON format
+	 */
 	Entity.prototype.toJSON = function() {
 		var copy = {}, prop;
 		for(var i in this) {
 			if(this.hasOwnProperty(i) && i[0] !== '_') {
-				prop = this[i];
-				copy[i] = prop.toJSON ? prop.toJSON() :
-					prop.buffer ? [prop[0], prop[1], prop[2]] :
-					prop;
+				if((prop = this[i])) {
+					copy[i] = prop.toJSON ? prop.toJSON() :
+						prop.buffer ? [prop[0], prop[1], prop[2]] :
+						prop;
+				}
 			}
 		}
 
 		return copy;
 	};
 
+	/**
+	 * Calculcates the distance to another entity
+	 */
 	Entity.prototype.distanceTo = function(entity) {
 		return vec3.dist(this.pos, entity.pos);
 	};
 
+	/*
+	 * Determines if this Entity intersects with the passed Entity
+	 */
 	Entity.prototype.intersects = function(entity) {
 		return this.distanceTo(entity) < (this.radius + entity.radius);
 	};
 
-	Entity.prototype.overlap = function(entity) {
-		return this.radius + entity.radius - this.distanceTo(entity);
-	};
-
+	/**
+	 * Determines if the Entity is outside the world parameters
+	 */
 	Entity.prototype.outsideWorld = function(width, height) {
 		var r = this.radius,
 			minX = this.pos[0] < r, maxX = this.pos[0] + r > width,
@@ -84,7 +103,16 @@
 		}
 
 		return false;
-	}
+	};
+
+	Entity.prototype._registerChange = function(prop, val) {
+		this._game.registerChange(this.deltaScope, this.id, prop, val);
+	};
+	
+	Entity.prototype.destroy = function() {
+		this.remove = true;
+		this._registerChange('remove', true);
+	};
 
 	exports.Entity = Entity;
 

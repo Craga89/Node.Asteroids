@@ -49,7 +49,7 @@ socket.on('start', function(data) {
 	game.load(data.state, false);
 
 	// Start game and renderer
-	renderer.render();
+	//renderer.start();
 
 	// join the game
 	socket.emit('join', {
@@ -85,6 +85,12 @@ socket.on('leave', function(data) {
 // Load game state when recieved
 socket.on('state', function(data) {
 	game.load(data.state);
+});
+
+// Merge game delta when recieved
+socket.on('delta', function(data) {
+	game.delta(data.state);
+	renderer.render();
 });
 
 // Handle errors

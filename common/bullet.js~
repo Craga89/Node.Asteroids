@@ -9,8 +9,9 @@
 	 *
 	 * Represent an object within the game
 	 */
-	function Bullet(params) {
-		params = params || defaults;
+	function Bullet(params, game) {
+		// Internals
+		this._game = game;
 
 		this.id = params.id;
 		this.type = 'bullet';
@@ -32,15 +33,15 @@
 	Bullet.prototype._super = Entity.prototype;
 	Bullet.prototype.constructor = Bullet;
 
-	// Merge properties
+	// Setup merge properties
 	Bullet._mergeProps = Entity._mergeProps.concat([
-		'bot', 'thrust', 'rotateBy', 'angle', 'health',
-		'shield', 'shieldQuality', 'shieldRegen', 'rebound',
-		'shooting', 'shootRate'
+		'owner', 'radius', 'angle', 'strength'
 	]);
 
 	Bullet.prototype.computeState = function(delta) {
-		var pos = this.pos,
+		var game = this._game,
+			id = this.id,
+			pos = this.pos,
 			vel = this.velocity,
 			outside, player;
 
@@ -49,45 +50,10 @@
 
 		// Calculate new position based on velocity
 		vec3.add(pos, [ vel[0] * delta, vel[1] * delta, 0 ]);
+
+		// Register delta changes
+		game.registerChange(this.deltaScope, id, 'pos', pos, 2);
 	};
-
-	Bullet.prototype.toJSON = function() {
-		var copy = {}, prop;
-		for(var i in this) {
-			if(this.hasOwnProperty(i)) {
-				prop = this[i];
-				copy[i] = prop.toJSON ? prop.toJSON() :
-					prop.buffer ? [prop[0], prop[1], prop[2]] :
-					prop;
-			}
-		}
-
-		return copy;
-	};
-
-	Bullet.prototype.distanceTo = function(entity) {
-		return vec3.dist(this.pos, entity.pos);
-	};
-
-	Bullet.prototype.intersects = function(entity) {
-		return this.distanceTo(entity) < (this.radius + entity.radius);
-	};
-
-	Bullet.prototype.outsideWorld = function(width, height) {
-		var r = this.radius,
-			minX = this.pos[0] < r, maxX = this.pos[0] + r > width,
-			minY = this.pos[1] < r, maxY = this.pos[1] + r > height;
-
-		// If any of the conditions are true... return array
-		if(minX || maxX || minY || maxY) {
-			return [
-				minX ? -1 : maxX ? 1 : 0,
-				minY ? -1 : maxY ? 1 : 0
-			];
-		}
-
-		return false;
-	}
 
 	exports.Bullet = Bullet;
 

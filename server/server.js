@@ -21,12 +21,19 @@ io.set('log level', 1);
 game.load( level.generate(), false );
 
 // Set tick callback
-game.onTick = function() {
+game.onTick = function(){
+	/*
 	// Send game snapshot
 	io.sockets.emit('state', {
 		timeStamp: Date.now(),
-		state: game.save(),
-		callbacks: game.callbacks
+		state: game.save()
+	});
+	*/
+	
+	// Send game snapshot
+	io.sockets.emit('delta', {
+		timeStamp: Date.now(),
+		state: game.deltaState
 	});
 }
 

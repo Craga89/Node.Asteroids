@@ -35,6 +35,12 @@
 		this.drawDirection = params.showDirection || false;
 	}
 
+	Renderer.prototype.start = function() {
+		requestAnimationFrame(function() {
+			self.render.call(self);
+		});
+	}
+
 	Renderer.prototype.render = function() {
 		var self = this,
 			entities = this.game.state.entities,
@@ -45,20 +51,11 @@
 
 		// Render all objects
 		for(i in entities) {
-			entity = entities[i];
-
-			if(entity.remove) {
-				if(entity.type === 'player') {
-					console.log('Player ' + entity.id + ' died!');
-				}
-			}
+			// Check to make sure the entity isn't removed
+			if((entity = entities[i]).remove) { continue };
 
 			self.renderEntity(entity);
 		}
-
-		requestAnimationFrame(function() {
-			self.render.call(self);
-		});
 	};
 
 	Renderer.prototype.renderEntity = function(entity) {
