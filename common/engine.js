@@ -2,7 +2,8 @@
 	var Sequence = (CLIENT ? exports : require('./sequence')).Sequence,
 		Timer = (CLIENT ? exports : require('./timer')).Timer,
 		Player = (CLIENT ? exports : require('./player')).Player,
-		Bullet = (CLIENT ? exports : require('./bullet')).Bullet;
+		Bullet = (CLIENT ? exports : require('./bullet')).Bullet,
+		Powerups = (CLIENT ? exports.Powerups : require('./powerup'));
 
 	function random(min, max) {
 		return (Math.random() * (max - min + 1)) + min;
@@ -185,6 +186,10 @@
 					switch(entity.type+entity2.type) {
 						case 'playerbullet': entity.handleHit(entity2); break;
 						case 'bulletplayer': entity2.handleHit(entity); break;
+						
+						case 'powerupplayer': entity.activate(entity2); break;
+						case 'playerpowerup': entity2.activate(entity); break;
+
 						case 'playerplayer': entity.handleCollision(entity2); break;
 					}
 				}
@@ -210,12 +215,13 @@
 			pos = player.pos,
 			vel = player.velocity,
 			angle = player.angle,
-			bullet, id;
+			id = 'bullet_' + this.lastID++,
+			bullet;
 
 		// Create the new bullet
 		state.entityMap[id] = -1 + state.entities.push((
 			bullet = new Bullet({
-				id: (id = 'bullet_' + this.lastID++),
+				id: id,
 				owner: player.id,
 				pos: [ pos[0], pos[1], pos[2] ],
 				velocity: vec3.create([
@@ -326,6 +332,9 @@
 			// Depending on type, instantiate.
 			e = entity.type === 'player' ? new Player(entity, this) :
 				entity.type === 'bullet' ? new Bullet(entity, this) :
+				entity.type === 'powerup' ?
+					entity.powerup === 'shield' ? new Powerups.Shield(entity, this) :
+					false :
 				false;
 
 			// If it was a vlid entity type...
@@ -358,6 +367,7 @@
 		if(len > (this.STATE_BUFFER_TIME / this.TICK_RATE)) { stateBuffer.shift(); }
 
 		// Process events
+		/*
 		i = events.length;
 		while((event = events[--i])) {
 			console.log(event);
@@ -365,6 +375,7 @@
 				callback.call(this, event.pop(), event);
 			}
 		}
+		*/
 
 		// Process entity changes
 		for(i in deltaEntities) {
@@ -379,12 +390,15 @@
 			// Create new entity if we haven't seen it before
 			else if(!entity) {
 				entity = deltaEntity;
-				
+
 				// Make sure we aren't re-creating an entity
 				if(!state.entityMap[ entity.id ]) {
 					// Depending on type, instantiate.
 					e = entity.type === 'player' ? new Player(entity, this) :
 						entity.type === 'bullet' ? new Bullet(entity, this) :
+						entity.type === 'powerup' ?
+							entity.powerup === 'shield' ? new Powerups.Shield(entity, this) :
+							false :
 						false;
 
 					// Push into state entity array

@@ -45,6 +45,9 @@
 			vel = this.velocity,
 			outside, player;
 
+		// Set last pos
+		vec3.set(pos, this.lastPos);
+
 		// Calculate new position based on velocity
 		vec3.add(pos, [ vel[0] * delta, vel[1] * delta, 0 ]);
 

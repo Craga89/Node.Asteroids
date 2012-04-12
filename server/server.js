@@ -6,10 +6,6 @@ var io = require('socket.io').listen(3050),
 
 // Setup game and level instances
 var game = new Game();
-var level = new Level({
-	width: game.WIDTH,
-	height: game.HEIGHT
-});
 
 // Fake lag
 var fakeLag = 0;
@@ -18,7 +14,7 @@ var fakeLag = 0;
 io.set('log level', 1);
 
 // Load the generated level game state
-game.load( level.generate(), false );
+game.load( Level.generate(game) );
 
 // Set tick callback
 game.onTick = function(){

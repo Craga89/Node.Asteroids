@@ -24,8 +24,6 @@
 		this.radius = 2;
 		this.angle = params.angle;
 		this.strength = 30;
-		
-		this.remove = params.remove || false;
 	};
 
 	// Inherit from Entity

@@ -5,8 +5,9 @@
 	/**
 	 * Entity class - Represents an object within the game
 	 */
-	function Entity(params) {
+	function Entity() {
 		this.deltaScope = 'entities';
+		this.remove = false;
 	};
 
 	/**
@@ -18,7 +19,7 @@
 	 * Determines which properties get merged when calling
 	 * the .merge() method below.
 	 */
-	Entity._mergeProps = ['id', 'type', 'pos', 'lastPos', 'velocity', 'acceleration', 'remove'];
+	Entity._mergeProps = ['id', 'type', 'pos', 'lastPos', 'velocity', 'acceleration', 'remove', 'deltaScope'];
 
 	/**
 	 * Merges two Entitys of the same constructor together.
@@ -60,12 +61,10 @@
 	Entity.prototype.toJSON = function() {
 		var copy = {}, prop;
 		for(var i in this) {
-			if(this.hasOwnProperty(i) && i[0] !== '_') {
-				if((prop = this[i])) {
-					copy[i] = prop.toJSON ? prop.toJSON() :
-						prop.buffer ? [prop[0], prop[1], prop[2]] :
-						prop;
-				}
+			if(i[0] !== '_' && (prop = this[i]) && typeof prop !== 'function') {
+				copy[i] = prop.toJSON ? prop.toJSON() :
+					prop.buffer ? [prop[0], prop[1], prop[2]] :
+					prop;
 			}
 		}
 

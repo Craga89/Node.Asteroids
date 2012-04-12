@@ -47,9 +47,6 @@
 		// Shooting properties
 		this.shooting = params.shooting || false;
 		this.shootRate = 150;
-
-		// Removal flag
-		this.remove = params.remove || false;
 	};
 
 	// Inherit from Entity

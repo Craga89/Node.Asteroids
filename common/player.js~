@@ -172,12 +172,17 @@
 		}
 	}
 
-	Player.prototype.destroy = function() {
-		this.health = this.shield = 0;
-		this.remove = true;
-
-		this._registerChange('remove', true);
+	Player.prototype.move = function(amount) {
+		this.thrust = amount;
 	};
+
+	Player.prototype.rotate = function(value) {
+		this.rotateBy = value;
+	};
+
+	Player.prototype.shoot = function(bool) {
+		this.shooting = !!bool;
+	}
 
 	Player.prototype.handleCmd = function(cmd) {
 		// Handle shooting
@@ -194,17 +199,12 @@
 		}
 	}
 
-	Player.prototype.move = function(amount) {
-		this.thrust = amount;
-	};
+	Player.prototype.destroy = function() {
+		this.health = this.shield = 0;
+		this.remove = true;
 
-	Player.prototype.rotate = function(value) {
-		this.rotateBy = value;
+		this._registerChange('remove', true);
 	};
-
-	Player.prototype.shoot = function(bool) {
-		this.shooting = !!bool;
-	}
 
 	exports.Player = Player;
 

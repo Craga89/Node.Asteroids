@@ -51,13 +51,8 @@
 
 		// Render all objects
 		for(i in entities) {
+			// Check to make sure the entity isn't removed
 			if((entity = entities[i]).remove) { continue };
-
-			if(entity.remove) {
-				if(entity.type === 'player') {
-					console.log('Player ' + entity.id + ' died!');
-				}
-			}
 
 			self.renderEntity(entity);
 		}
@@ -141,6 +136,16 @@
 		ctx.fillText(Math.floor(player.shield) + '%', -radius, radius + r2 + ctx.lineWidth);
 		ctx.fillStyle = 'red';
 		ctx.fillText(Math.floor(player.health) + '%', radius, radius + r2 + ctx.lineWidth);
+	}
+
+	Renderer.prototype._renderPowerup = function(powerup) {
+		var ctx = this.ctx;
+
+		ctx.fillStyle = 'cyan';
+		ctx.beginPath();
+		ctx.arc(0, 0, powerup.radius, 0, 2 * Math.PI, true);
+		ctx.closePath();
+		ctx.fill();
 	}
 
 	Renderer.prototype._renderBullet = function(bullet) {

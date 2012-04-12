@@ -1,29 +1,40 @@
-function Level(params) {
-	this.maxSpeed = params.maxSpeed;
-	this.width = params.width;
-	this.height = params.height;
+var Powerups = require('../common/powerup');
 
-	this.lastID = 0;
+function random(min, max) {
+	return (Math.random() * (max - min + 1)) + min;
 }
 
-Level.prototype.generate = function() {
+function Level() { }
+
+Level.generate = function(game) {
 	var state = {
-		entities: {},
-		timeStamp: new Date()
-	};
+		entities: [],
+		entityMap: {},
+		timeStamp: Date.now()
+	},
+	i, j, id;
+
+	// Add some power ups
+	for(i in Powerups) {
+		for(j = 0; j < random(0, 4); j++) {
+			id = 'powerup_' + (game.lastID++);
+			state.entityMap[id] = -1 + state.entities.push(
+				new Powerups[i]({
+					id: id,
+					pos: [
+						random(0, game.WIDTH),
+						random(0, game.HEIGHT),
+						0
+					]
+				},
+				game)
+			)
+		}
+	}
+
+	console.log(state.entities[0].toJSON);
 
 	return state;
-}
-
-
-function LevelGenerator(params) {
-  this.blobCount = params.blobCount;
-  this.maxSpeed = params.maxSpeed;
-  this.maxRadius = params.maxRadius;
-  this.width = params.width;
-  this.height = params.height;
-
-  this.lastId = 0;
 }
 
 exports.Level = Level;

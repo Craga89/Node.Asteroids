@@ -17,6 +17,7 @@ html
 		script(src='/js/common/glmatrix.min.js')
 		script(src='/js/common/sequence.js')
 		script(src='/js/common/timer.js')
+		script(src='/js/common/entity.js')
 		script(src='/js/common/bullet.js')
 		script(src='/js/common/player.js')
 		script(src='/js/common/engine.js')

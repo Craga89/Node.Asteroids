@@ -87,6 +87,7 @@
 		switch(entity.type) {
 			case 'player': this._renderPlayer(entity); break;
 			case 'bullet': this._renderBullet(entity); break;
+			case 'powerup': this._renderPowerup(entity); break;
 		}
 
 		// Restore canvas context
@@ -136,6 +137,16 @@
 		ctx.fillText(Math.floor(player.shield) + '%', -radius, radius + r2 + ctx.lineWidth);
 		ctx.fillStyle = 'red';
 		ctx.fillText(Math.floor(player.health) + '%', radius, radius + r2 + ctx.lineWidth);
+	}
+
+	Renderer.prototype._renderPowerup = function(powerup) {
+		var ctx = this.ctx;
+
+		ctx.fillStyle = 'cyan';
+		ctx.beginPath();
+		ctx.arc(0, 0, powerup.radius, 0, 2 * Math.PI, true);
+		ctx.closePath();
+		ctx.fill();
 	}
 
 	Renderer.prototype._renderBullet = function(bullet) {
