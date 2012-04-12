@@ -50,12 +50,7 @@
 		vec3.add(pos, [ vel[0] * delta, vel[1] * delta, 0 ]);
 
 		// Register delta changes
-		this._registerChange('pos');
-	};
-
-	Bullet.prototype.destroy = function() {
-		this.remove = true;
-		this._game.registerChange(this.deltaScope, this.id, 'remove', true);
+		this.registerChange('pos');
 	};
 
 	exports.Bullet = Bullet;

@@ -67,7 +67,7 @@
 		player.adjustShield( this.power );
 
 		// Call super-class method
-		this._super.activate.apply(this, arguments);
+		this._super.activate.call(this, arguments);
 	}
 
 	//exports.Powerup = Powerup;

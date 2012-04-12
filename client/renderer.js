@@ -121,7 +121,7 @@
 				Math.floor(shield * 255) +
 			')';
 			ctx.beginPath();
-			ctx.arc(0, 0, radius, 0, 2 * Math.PI, true);
+			ctx.arc(0, 0, radius - (shield*2), 0, 2 * Math.PI, true);
 			ctx.closePath();
 			ctx.stroke();
 		}

@@ -110,6 +110,7 @@
 	}
 	
 	Entity.prototype.destroy = function() {
+		console.trace()
 		this.remove = true;
 		this.registerChange('remove', true);
 		this.registerEvent('destroy');

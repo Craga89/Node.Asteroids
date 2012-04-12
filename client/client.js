@@ -1,16 +1,31 @@
-// Setup socket.io connection
-var socket = io.connect('http://192.168.1.68:3050');
-
-// Setup game, renderer and input handler
 var playerID = null,
 	totalSkew = 0;
 
+// Setup socket.io connection
+var socket = io.connect('http://192.168.1.68:3050');
+
+// Setup game
 var game = new Game();
+
+// Setup renderer
 var renderer = new Renderer({
 	id: 'game',
 	game: game
 });
 
+// Setup sound manager
+soundManager.url = '/js/client/swf';
+soundManager.flashVersion = 9;
+//soundManager.useHTML5Audio = true;
+soundManager.useFlashBlock = false;
+soundManager.onready(function() {
+	console.log('Soundmanager ready');
+});
+
+// Setup event handler
+var handler = new EventHandler();
+
+// Setup input handler
 var input = new Input({
 	game: game,
 	renderer: renderer
@@ -99,6 +114,7 @@ socket.on('error', function(data) {
 		console.error('recv error', 'Nickname in use!');
 	}
 	else {
-		console.error('recv error', data);
+		console.error('recv error');
+		console.log(data);
 	}
 })

@@ -102,10 +102,12 @@
 	/**
 	 * Register an event to the game state for delta compression
 	 */
-	Game.prototype.registerEvent = function() {
-		// Object sanity checks
-		if(typeof this.deltaState.events === 'undefined') { this.deltaState.events = []; }
-		this.deltaState.events.push( [].splice.call(arguments, 0) );
+	Game.prototype.registerEvent = function(event) {
+		var delta = this.deltaState;
+
+		// Push object onto the array
+		if(typeof delta.events === 'undefined') { delta.events = []; }
+		delta.events.push(event);
 	}
 
 	/**
@@ -146,10 +148,7 @@
 			if(!(entity = entities[i])) { continue; }
 
 			// Remove entity if needed
-			if(entity.remove) {
-				this.registerChange('entities', entity.id, 'remove', true);
-				continue;
-			}
+			if(entity.remove) { continue;}
 
 			// Compute new state and register it
 			entity.computeState(delta);
@@ -169,7 +168,7 @@
 						break;
 
 					// Remove all other objects when off-screen
-					default: this.registerChange(entity.deltaScope, entity.id, 'remove', true); continue; break;
+					default: entity.destroy(); continue; break;
 				}
 			}
 
@@ -247,7 +246,7 @@
 		player = new Player(data, this);
 
 		// Push entity onto state
-		this.state.entityMap[ data.id ] = this.state.entities.push(player) - 1
+		this.state.entityMap[ data.id ] = this.state.entities.push(player) - 1;
 
 		// Find the next closest slot available and map it
 		return player;
@@ -366,17 +365,6 @@
 		len = stateBuffer.push(delta);
 		if(len > (this.STATE_BUFFER_TIME / this.TICK_RATE)) { stateBuffer.shift(); }
 
-		// Process events
-		/*
-		i = events.length;
-		while((event = events[--i])) {
-			console.log(event);
-			if((callback = callbacks.events[ event[0] ])) {
-				callback.call(this, event.pop(), event);
-			}
-		}
-		*/
-
 		// Process entity changes
 		for(i in deltaEntities) {
 			deltaEntity = deltaEntities[i];
@@ -385,14 +373,13 @@
 			// If we're removing the entity... go!
 			if(entity && deltaEntity.remove) {
 				entity.destroy();
+				delete entityMap[i];
 			}
 			
 			// Create new entity if we haven't seen it before
 			else if(!entity) {
 				entity = deltaEntity;
 
-				console.log(entity)
-				
 				// Make sure we aren't re-creating an entity
 				if(!state.entityMap[ entity.id ]) {
 					// Depending on type, instantiate.
@@ -411,6 +398,14 @@
 			// Merge the delta state into our entity object
 			else { entity.merge(deltaEntity, callbacks[entity.type]); }
 		}
+
+		// Process events
+		i = events.length;
+		while((event = events[--i])) {
+			if((callback = callbacks.events[ event[0] ])) {
+				callback.apply(this, (event.shift(), event));
+			}
+		}
 	};
 
 	/**
@@ -420,6 +415,15 @@
 		player: {
 		},
 		events: {
+			collision: function(playerID) {
+				soundManager.createSound({
+					id: 'mySound',
+					url: '/audio/collision.mp3',
+					autoLoad: true,
+					autoPlay: true,
+					volume: 100
+				});
+			}
 		}
 	}
 

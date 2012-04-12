@@ -87,6 +87,7 @@
 		switch(entity.type) {
 			case 'player': this._renderPlayer(entity); break;
 			case 'bullet': this._renderBullet(entity); break;
+			case 'powerup': this._renderPowerup(entity); break;
 		}
 
 		// Restore canvas context
@@ -120,7 +121,7 @@
 				Math.floor(shield * 255) +
 			')';
 			ctx.beginPath();
-			ctx.arc(0, 0, radius, 0, 2 * Math.PI, true);
+			ctx.arc(0, 0, radius - ctx.lineWidth, 0, 2 * Math.PI, true);
 			ctx.closePath();
 			ctx.stroke();
 		}

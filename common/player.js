@@ -36,13 +36,13 @@
 
 		// Health and shield properties
 		this.health = params.health || 100;
-		this.radius = params.radius || 15;
 		this.shield = params.shield || 100;
 		this.shieldQuality = 0.5;
 		this.shieldRegen = 0.075;
 
-		// Reound propeties
+		// Set properties
 		this.rebound = 0.96;
+		this.radius = 15;
 
 		// Shooting properties
 		this.shooting = params.shooting || false;
@@ -77,7 +77,7 @@
 
 		// Add rotation
 		this.angle += (Math.PI / 8) * this.rotateBy;
-		if(this.rotateBy) { this._registerChange('angle'); }
+		if(this.rotateBy) { this.registerChange('angle'); }
 
 		// Calculate new velocity based on acceleration and thrust
 		vec3.multiply(vel, accel);
@@ -86,11 +86,11 @@
 			Math.cos(this.angle) * this.thrust,
 			0
 		]);
-		this._registerChange('velocity');
+		this.registerChange('velocity');
 
 		// Calculate new position based on velocity
 		vec3.add(pos, [ vel[0] * delta, vel[1] * delta, 0 ]);
-		this._registerChange('pos');
+		this.registerChange('pos');
 
 		// Regenerate shield
 		this.adjustShield(this.shieldRegen);
@@ -124,8 +124,11 @@
 		vec3.scale(collision, aci - bci, player.velocity);
 
 		// Register velocity changes
-		this._registerChange('velocity');
-		player._registerChange('velocity');
+		this.registerChange('velocity');
+		player.registerChange('velocity');
+
+		// Register event
+		this.registerEvent('collision', player.id);
 	};
 
 	Player.prototype.handleHit = function(bullet) {
@@ -154,7 +157,7 @@
 
 		// Inform game of strength change if there was any
 		if(Math.floor(shield) !== floored) {
-			this._registerChange('shield', floored);
+			this.registerChange('shield', floored);
 		}
 	}
 
@@ -165,7 +168,7 @@
 		if(amount > health) { this.destroy(); }
 		else {
 			this.health = Math.round(Math.max(health + amount, 0));
-			if(health !== this.health) { this._registerChange('health'); }
+			if(health !== this.health) { this.registerChange('health'); }
 		}
 	}
 
@@ -195,13 +198,6 @@
 			this.move(cmd.up ? 0.02 : 0);
 		}
 	}
-
-	Player.prototype.destroy = function() {
-		this.health = this.shield = 0;
-		this.remove = true;
-
-		this._registerChange('remove', true);
-	};
 
 	exports.Player = Player;
 
