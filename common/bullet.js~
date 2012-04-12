@@ -49,10 +49,16 @@
 		vec3.set(pos, this.lastPos);
 
 		// Calculate new position based on velocity
-		vec3.add(pos, [ vel[0] * delta, vel[1] * delta, 0 ]);
+		pos = vec3.create();
+		vec3.add(pos, [ vel[0] * delta, vel[1] * delta, 0 ], pos);
 
 		// Register delta changes
-		game.registerChange(this.deltaScope, id, 'pos', pos, 2);
+		this._registerChange('pos', pos);
+	};
+
+	Bullet.prototype.destroy = function() {
+		this.remove = true;
+		this._game.registerChange(this.deltaScope, this.id, 'remove', true);
 	};
 
 	exports.Bullet = Bullet;

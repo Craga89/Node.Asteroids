@@ -106,6 +106,7 @@
 	};
 
 	Entity.prototype._registerChange = function(prop, val) {
+		if(typeof val === 'undefined') { val = this[prop]; }
 		this._game.registerChange(this.deltaScope, this.id, prop, val);
 	};
 	

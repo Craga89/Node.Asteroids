@@ -24,7 +24,7 @@
 		this.TICK_RATE = Math.round(1000 / 30);
 		this.CMD_RATE = Math.round(1000 / 30);
 		this.TRANSFER_RATE = 0.05;
-		this.STATE_BUFFER_TIME = 1000;
+		this.STATE_BUFFER_TIME = this.TICK_RATE * 3;
 		this.MAX_LATENCY = 100;
 
 		// State specific
@@ -81,17 +81,20 @@
 	 * Regiser a change to the game state for delta compression
 	 */
 	Game.prototype.registerChange = function(type, id, prop, val) {
+		var delta = this.deltaState;
+
 		// Object sanity checks
-		if(typeof this.deltaState[type] === 'undefined') { this.deltaState[type] = {}; }
-		if(typeof this.deltaState[type][id] === 'undefined') { this.deltaState[type][id] = {}; }
+		if(typeof delta[type] === 'undefined') { delta[type] = {}; }
+		if(typeof delta[type][id] === 'undefined') { delta[type][id] = {}; }
 
 		// Check if we're overwriting previous objects...
 		if(typeof val !== 'undefined') {
-			if(typeof this.deltaState[type][id] === 'undefined') { this.deltaState[type][id] = {}; }
-			this.deltaState[type][id][prop] = val;
+			// If not defined... define it
+			if(typeof delta[type][id] === 'undefined') { delta[type][id] = {}; }
+			delta[type][id][prop] = val;
 		}
 		else {
-			this.deltaState[type][id] = prop;
+			delta[type][id] = prop;
 		}
 	}
 
@@ -310,10 +313,6 @@
 			stateBuffer = this.stateBuffer,
 			state, entity, len, me, e;
 
-		// Push the state onto the buffer
-		len = stateBuffer.push(state);
-		if(len > (this.STATE_BUFFER_TIME / this.TICK_RATE)) { stateBuffer.shift(); }
-
 		// Setup new state
 		this.state = state = {
 			entities: [],
@@ -351,7 +350,12 @@
 			events = delta.events || [],
 			entity, deltaEntity,
 			callbacks = this.delta.callbacks,
+			stateBuffer = this.stateBuffer,
 			callback, i, e;
+
+		// Push the delta state onto the buffer
+		len = stateBuffer.push(delta);
+		if(len > (this.STATE_BUFFER_TIME / this.TICK_RATE)) { stateBuffer.shift(); }
 
 		// Process events
 		i = events.length;

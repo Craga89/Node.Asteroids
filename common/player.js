@@ -70,7 +70,7 @@
 			vel = this.velocity,
 			accel = this.acceleration,
 			thrust = this.thrust,
-			outside, player;
+			outside, player, angle;
 
 		// If health is zero we're dead!
 		if(this.health <= 0) { this.destroy(); }
@@ -80,6 +80,7 @@
 
 		// Add rotation
 		this.angle += (Math.PI / 8) * this.rotateBy;
+		if(this.rotateBy) { this._registerChange('angle'); }
 
 		// Calculate new velocity based on acceleration and thrust
 		vec3.multiply(vel, accel);
@@ -88,19 +89,14 @@
 			Math.cos(this.angle) * this.thrust,
 			0
 		]);
-
-		// Regenerate shield (maximum 100%)
-		this.shield += this.shieldRegen;
-		if(this.shield > 100) { this.shield = 100; }
+		this._registerChange('velocity');
 
 		// Calculate new position based on velocity
 		vec3.add(pos, [ vel[0] * delta, vel[1] * delta, 0 ]);
+		this._registerChange('pos');
 
-		// Register delta changes
-		this._registerChange('pos', pos);
-		this._registerChange('velocity', vel);
-		this._registerChange('angle', this.angle);
-		this._registerChange('shield', this.shield);
+		// Regenerate shield
+		this.adjustShield(this.shieldRegen);
 	};
 
 	Player.prototype.collision = function(player) {
@@ -123,21 +119,27 @@
 
 		// Adjust shield strengths
 		type = this.shield < 1 ? 'adjustHealth' : 'adjustShield';
-		this[type](- (1 - Math.abs(bci) * 5) );
-		player[type](- (1 - Math.abs(aci) * 5) );
+		this[type](-((1 - Math.abs(bci)) * 15) );
+		player[type](-((1 - Math.abs(aci)) * 15) );
 
 		// Scale velocity using impulse/forces above
 		vec3.scale(collision, bci - aci, this.velocity);
 		vec3.scale(collision, aci - bci, player.velocity);
+
+		// Register velocity changes
+		this._registerChange('velocity');
+		player._registerChange('velocity');
 	};
 
 	Player.prototype.hit = function(bullet) {
+		var shield = this.shield;
+
 		// Reduce shield strength until zero...
 		this.adjustShield(-bullet.strength * this.shieldQuality);
 
 		// Shield is down, take away health and set shield to zero
 		if(this.shield <= 0) {
-			this.adjustHealth(-bullet.strength);
+			this.adjustHealth(-bullet.strength - shield);
 		}
 
 		// Remove bullet
@@ -145,15 +147,23 @@
 	};
 
 	Player.prototype.adjustShield = function(amount) {
-		this._registerChange('shield', (this.shield = Math.max(this.shield + amount, 0)));
+		var shield = this.shield;
+
+		// Round it to one decimal place
+		this.shield = Math.max(Math.min(100, this.shield + amount), 0);
+		if(Math.floor(shield) !== Math.floor(this.shield)) {
+			this._registerChange('shield', Math.floor(this.shield) );
+		}
 	}
 
 	Player.prototype.adjustHealth = function(amount) {
-		if(amount > this.health) {
-			this.destroy();
-		}
+		health = this.health;
+
+		// When health reaches zero... kill player
+		if(amount > health) { this.destroy(); }
 		else {
-			this._registerChange('health', (this.health = Math.max(this.health + amount, 0)));
+			this.health = Math.round(Math.max(health + amount, 0));
+			if(health !== this.health) { this._registerChange('health'); }
 		}
 	}
 

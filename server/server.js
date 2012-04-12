@@ -22,19 +22,13 @@ game.load( level.generate(), false );
 
 // Set tick callback
 game.onTick = function(){
-	/*
-	// Send game snapshot
-	io.sockets.emit('state', {
-		timeStamp: Date.now(),
-		state: game.save()
-	});
-	*/
-	
-	// Send game snapshot
+	// Send delta snapshot
 	io.sockets.emit('delta', {
 		timeStamp: Date.now(),
 		state: game.deltaState
 	});
+
+	console.log(game.deltaState)
 }
 
 // Initialise game loop

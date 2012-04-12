@@ -89,7 +89,8 @@ socket.on('state', function(data) {
 
 // Merge game delta when recieved
 socket.on('delta', function(data) {
-	game.delta(data.state);
+	game.delta(data.state, data.timeStamp);
+	renderer.render();
 });
 
 // Handle errors
