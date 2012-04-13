@@ -139,6 +139,9 @@
 
 		// Remove bullet
 		bullet.destroy();
+
+		// Register event
+		this.registerEvent('hit', bullet.id);
 	};
 
 	Player.prototype.adjustShield = function(amount) {

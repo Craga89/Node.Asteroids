@@ -11,12 +11,17 @@
 	 *
 	 * Represents a power up in the game
 	 */
-	function EventHandler() {
+	function EventHandler(events) {
 		this._callbacks = {};
 		
 		this._handlers = {};
 		this._handlerTemplate = ['var result;'];
 		this._lastID = 0;
+
+		// Bind the initial events if passed
+		if(events) {
+			for(i in events) { this.bind(i, events[i]); }
+		}
 	}
 
 	/**
@@ -55,6 +60,7 @@
 	};
 
 	EventHandler.prototype.fire = function(event, arguments, scope) {
+		console.log(this);
 		if(typeof this._handlers[event] === 'function') {
 			this._handlers[event].call(scope || this, this._callbacks[event], arguments);
 		}
@@ -74,7 +80,7 @@
 		namespace = namespace[1];
 
 		// If we're removing a whole event, reset the properties
-		if(!namespace) { callbacks[event] = handlers[event] = {}; }
+		if(!namespace) { callbacks[event] = []; delete handlers[event]; }
 
 		// Otherwise only remove those events that match the namespace
 		else {

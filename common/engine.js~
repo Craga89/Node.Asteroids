@@ -15,7 +15,7 @@
 		return array.push.apply(array, rest);
 	};
 
-	function Game() {
+	function Game(handler) {
 		var game = this;
 
 		/* Constants */
@@ -50,8 +50,8 @@
 		// Setup client smooth timer
 		this.smoothTimer = new Timer(this.SMOOTH_TIME);
 
-		// Setup callbacks
-		this.onTick = undefined;
+		// Event handler
+		this.eventHandler = handler || { fire: function() {} }
 	};
 
 	Game.prototype.update = function(timeStamp) {
@@ -68,6 +68,8 @@
 	Game.prototype.start = function(skew) {
 		console.log('Starting game...');
 		this.timer.start(skew);
+
+		this.registerEvent('start');
 	};
 
 	Game.prototype.stop = function() {
@@ -233,8 +235,9 @@
 			this)
 		));
 
-		// Register bullet
-		this.registerChange(bullet.deltaScope, id, bullet.toJSON());
+		// Register bullet and event
+		bullet.registerChange( bullet.toJSON() );
+		bullet.registerEvent('shoot', player.id);
 
 		return this;
 	};
@@ -292,8 +295,7 @@
 		var serialized = {
 			entities: [],
 			entityMap: {},
-			timeStamp: this.state.timeStamp,
-			callbacks: this.callbacks
+			timeStamp: this.state.timeStamp
 		},
 		entities = this.state.entities,
 		i = entities.length;
@@ -396,36 +398,15 @@
 			}
 
 			// Merge the delta state into our entity object
-			else { entity.merge(deltaEntity, callbacks[entity.type]); }
+			else { entity.merge(deltaEntity); }
 		}
 
 		// Process events
 		i = events.length;
 		while((event = events[--i])) {
-			if((callback = callbacks.events[ event[0] ])) {
-				callback.apply(this, (event.shift(), event));
-			}
+			this.eventHandler.fire(event.shift(), event, this);
 		}
 	};
-
-	/**
-	 * Setup callbacks
-	 */
-	Game.prototype.delta.callbacks = {
-		player: {
-		},
-		events: {
-			collision: function(playerID) {
-				soundManager.createSound({
-					id: 'mySound',
-					url: '/audio/collision.mp3',
-					autoLoad: true,
-					autoPlay: true,
-					volume: 100
-				});
-			}
-		}
-	}
 
 	Game.prototype.entityExists = function(id) {
 		return this.state.entities[ this.state.entityMap[id] ] || false;
@@ -435,16 +416,6 @@
 		var entity = this.state.entities[ this.state.entityMap[id] ];
 		return entity && entity.type === 'player' ? entity : false;
 	}
-
-
-	/* Callbacks */
-	var noop = function() {}
-	Game.prototype.callbacks
-	Game.prototype.conFire = noop;
-	Game.prototype.onCollision = noop;
-	Game.prototype.onHit = noop;
-	Game.prototype.onDeath = noop;
-	
 
 	exports.Game = Game;
 

@@ -4,8 +4,31 @@ var playerID = null,
 // Setup socket.io connection
 var socket = io.connect('http://192.168.1.68:3050');
 
+// Setup event handler
+var handler = new EventHandler({
+	start: function() {
+
+	},
+
+	collision: function(player) {
+		soundManager.play('collision');
+	},
+
+	powerup: function(player) {
+		soundManager.play('powerup');
+	},
+
+	hit: function(bullet) {
+		soundManager.play('hit');
+	},
+
+	shoot: function() {
+		soundManager.play('laser');
+	}
+});
+
 // Setup game
-var game = new Game();
+var game = new Game(handler);
 
 // Setup renderer
 var renderer = new Renderer({
@@ -16,14 +39,43 @@ var renderer = new Renderer({
 // Setup sound manager
 soundManager.url = '/js/client/swf';
 soundManager.flashVersion = 9;
-//soundManager.useHTML5Audio = true;
-soundManager.useFlashBlock = false;
+soundManager.useHTML5Audio = true;
+soundManager.useFlashBlock = true;
+soundManager.useHighPerformance = true;
+soundManager.useFastPolling = true;
 soundManager.onready(function() {
-	console.log('Soundmanager ready');
-});
+	soundManager.createSound({
+		id: 'collision',
+		url: '/audio/collision.mp3',
+		autoLoad: true,
+		multiShotEvents:true,
+		volume: 100
+	});
 
-// Setup event handler
-var Handler = new EventHandler();
+	soundManager.createSound({
+		id: 'laser',
+		url: '/audio/laser.mp3',
+		autoLoad: true,
+		multiShotEvents:true,
+		volume: 50
+	});
+
+	soundManager.createSound({
+		id: 'hit',
+		url: '/audio/hit.mp3',
+		autoLoad: true,
+		multiShotEvents:true,
+		volume: 50
+	});
+
+	soundManager.createSound({
+		id: 'powerup',
+		url: '/audio/powerup.mp3',
+		autoLoad: true,
+		multiShotEvents:true,
+		volume: 50
+	})
+});
 
 // Setup input handler
 var input = new Input({
@@ -70,6 +122,9 @@ socket.on('start', function(data) {
 	socket.emit('join', {
 		name: 'Craig' + Math.floor(Math.random() * 100)
 	});
+
+	// Fire start event
+	handler.fire('start');
 });
 
 // A new client has joined

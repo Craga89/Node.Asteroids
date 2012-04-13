@@ -121,7 +121,7 @@
 				Math.floor(shield * 255) +
 			')';
 			ctx.beginPath();
-			ctx.arc(0, 0, radius - ctx.lineWidth, 0, 2 * Math.PI, true);
+			ctx.arc(0, 0, radius - (shield*2), 0, 2 * Math.PI, true);
 			ctx.closePath();
 			ctx.stroke();
 		}
@@ -151,12 +151,13 @@
 
 	Renderer.prototype._renderBullet = function(bullet) {
 		var ctx = this.ctx,
-			mine = bullet.owner === game.me.id;
+			mine = bullet.owner === game.me.id,
+			range = 1.5 - (vec3.dist(bullet.pos, bullet.initialPos) / bullet.range);
 
 		ctx.fillStyle = mine ? 'green' : 'red';
 		ctx.rotate(bullet.angle);
 		ctx.beginPath();
-		ctx.arc(0, 0, 2, 0, 2 * Math.PI, true);
+		ctx.arc(0, 0, bullet.radius * range, 0, 2 * Math.PI, true);
 		ctx.closePath();
 		ctx.fill();
 	}

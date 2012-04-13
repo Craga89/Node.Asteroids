@@ -11,12 +11,17 @@
 	 *
 	 * Represents a power up in the game
 	 */
-	function EventHandler() {
+	function EventHandler(events) {
 		this._callbacks = {};
 		
 		this._handlers = {};
 		this._handlerTemplate = ['var result;'];
 		this._lastID = 0;
+
+		// Bind the initial events if passed
+		if(events) {
+			for(i in events) { this.bind(i, events[i]); }
+		}
 	}
 
 	/**

@@ -46,14 +46,14 @@
 		window.addEventListener('mousedown', function(event) {
 			var key = CLICKMAP[event.button];
 			if(key && !self.keyDown[key]) {
-				self.keyState[key] = self.keyDown[key] = translateEvent(event);
+				self.keyState[key] = self.keyDown[key] = self.translateEvent(event);
 				event.preventDefault();
 			}
 		});
 		window.addEventListener('mouseup', function(event) {
 			var key = CLICKMAP[event.button];
 			if(key) {
-				self.keyState[key] = self.keyDown[key] = translateEvent(event);
+				self.keyState[key] = self.keyDown[key] = self.translateEvent(event);
 				event.preventDefault();
 			}
 		});

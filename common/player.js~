@@ -126,6 +126,9 @@
 		// Register velocity changes
 		this.registerChange('velocity');
 		player.registerChange('velocity');
+
+		// Register event
+		this.registerEvent('collision', player.id);
 	};
 
 	Player.prototype.handleHit = function(bullet) {

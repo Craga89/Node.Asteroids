@@ -28,7 +28,7 @@
 	 * array are copied over, due to the "caching" nature of this
 	 * function.
 	 */
-	Entity.prototype.merge = function(entity, callbacks) {
+	Entity.prototype.merge = function(entity) {
 		var cons = this.constructor,
 			entityCons = entity.constructor,
 			copy = entityCons === Object,
@@ -40,24 +40,24 @@
 
 		// Create the merge function if one isn't already defined
 		if(!func) {
-			func = 'if(!callbacks) { callbacks = {}; };';
+			func = '';
 
-			// MErge the properties
+			// Merge the properties
 			if((props = cons._mergeProps || entityCons._mergeProps) && (i = props.length)) {
 				while((p = props[--i])) {
 					func += 'if(typeof obj2.'+p+' !== "undefined") { ' +
 						'obj.'+p+' = obj2.'+p+';' +
-						'callbacks.'+p+' && callbacks.'+p+'(obj, "'+p+'", obj2.'+p+');' +
+						//'callbacks.'+p+' && callbacks.'+p+'(obj, "'+p+'", obj2.'+p+');' +
 					"}\n";
 				}
 			}
 
 			// Create and set the new function
-			func = cons._mergeFunc = new Function('obj', 'obj2', 'callbacks', func);
+			func = cons._mergeFunc = new Function('obj', 'obj2', func);
 		}
 
 		// Run the merge function and return this object
-		return func(this, entity, callbacks), this;
+		return func(this, entity), this;
 	}
 
 	/**
@@ -101,7 +101,7 @@
 	};
 
 	Entity.prototype.registerChange = function(prop, val) {
-		if(typeof val === 'undefined') { val = this[prop]; }
+		if(typeof val === 'undefined' && typeof prop === 'string') { val = this[prop]; }
 		this._game.registerChange(this.deltaScope, this.id, prop, val);
 	};
 

@@ -23,6 +23,7 @@ html
 		script(src='/js/common/powerup.js')
 		script(src='/js/common/engine.js')
 		script(src='/js/client/socket.io.js')
+		script(src='/js/client/eventhandler.js')
 		script(src='/js/client/soundmanager2.js')
 		script(src='/js/client/renderer.js')
 		script(src='/js/client/sprite.js')

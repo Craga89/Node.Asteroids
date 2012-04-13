@@ -32,8 +32,9 @@
 			var key = KEYMAP[event.keyCode];
 			if(key && !self.keyDown[key]) {
 				self.keyState[key] = self.keyDown[key] = 1;
-				event.preventDefault();
 			}
+
+			if(key) { event.preventDefault(); }
 		});
 		window.addEventListener('keyup', function(event) {
 			var key = KEYMAP[event.keyCode];
@@ -47,8 +48,9 @@
 			var key = CLICKMAP[event.button];
 			if(key && !self.keyDown[key]) {
 				self.keyState[key] = self.keyDown[key] = self.translateEvent(event);
-				event.preventDefault();
 			}
+
+			if(key) { event.preventDefault(); }
 		});
 		window.addEventListener('mouseup', function(event) {
 			var key = CLICKMAP[event.button];
