@@ -38,7 +38,8 @@
 	Renderer.prototype.start = function() {
 		var self = this;
 		requestAnimationFrame(function() {
-			self.start.call(self);
+			self.render.call(self);
+			self.start();
 		});
 	}
 
@@ -81,6 +82,12 @@
 			ctx.stroke();
 			ctx.closePath();
 			ctx.restore();
+		}
+
+		
+
+		if(entity.type === 'player' && entity.pos[1] >= ctx.canvas.height) {
+			console.log(entity.id, entity.pos[1])
 		}
 
 		// If entity is a player, render their name

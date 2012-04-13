@@ -57,7 +57,8 @@
 
 	Game.instanceMap = {
 		'player': {
-			'player': Player
+			'player': Player,
+			'bot': Player
 		},
 		'bullet': {
 			'bullet': Bullet
@@ -173,8 +174,8 @@
 		// Execute scheduled changes
 		i = schedule.length;
 		while((task = schedule[--i])) {
-			if((task[1] -= delta) <= 0) { result = task[0].call(this, delta); }
-			if((task[2] == true && result && (task[1] = task[0]._ms)) || task[1] > 0) {
+			result = (task[1] -= delta) <= 0 ? task[0].call(this, delta) : true;
+			if(task[1] > 0 || (task[2] && result !== false && (task[1] = task[0]._ms))) {
 				ongoingSchedules.push(task);
 			}
 		}
@@ -195,13 +196,9 @@
 				velocity = entity.velocity;
 				switch(entity.type) {
 					case 'player':
-						// Bounce players back
-						if((velocity[0] > 0 && outside[0] > 0) || (velocity[0] < 0 && outside[0] < 0)) {
-							velocity[0] *= -entity.rebound;
-						}
-						if((velocity[1] > 0 && outside[1] > 0) || (velocity[1] < 0 && outside[1] < 0)) {
-							velocity[1] *= -entity.rebound;
-						}
+						// Loop players round the world
+						if(outside[0] !== 0) { entity.pos[0] = outside[0] < 0 ? this.WIDTH : 0 }
+						if(outside[1] !== 0) { entity.pos[1] = outside[1] < 0 ? this.HEIGHT : 0 }
 						break;
 
 					// Remove all other objects when off-screen
@@ -220,12 +217,15 @@
 					
 					// Handle different collision types
 					switch(entity.type+entity2.type) {
+						// Player collides with a bullet
 						case 'playerbullet': entity.handleHit(entity2); break;
 						case 'bulletplayer': entity2.handleHit(entity); break;
-						
+
+						// Player collides with a power up
 						case 'powerupplayer': entity.activate(entity2); break;
 						case 'playerpowerup': entity2.activate(entity); break;
 
+						// Player collides with another player
 						case 'playerplayer': entity.handleCollision(entity2); break;
 					}
 				}
@@ -261,15 +261,14 @@
 				random(0, this.WIDTH),
 				random(0, this.HEIGHT),
 				0
-			]),
-			angle: random(0, Math.PI / 2)
+			])
 		});
 	};
 
 	Game.prototype.addBot = function(id) {
-		return this._addPlayer({
+		var e = this._addPlayer({
 			id: id,
-			bot: true,
+			subtype: 'bot',
 			pos: vec3.create([
 				random(0, this.WIDTH),
 				random(0, this.HEIGHT),
@@ -277,6 +276,11 @@
 			]),
 			angle: random(0, Math.PI / 2)
 		});
+
+		// Register it
+		e.registerChange( e.toJSON() );
+
+		return e;
 	};
 
 	Game.prototype.leave = function(id) {

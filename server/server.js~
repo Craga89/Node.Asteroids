@@ -24,14 +24,30 @@ game.onTick = function(){
 		state: game.deltaState
 	});
 
-	console.log(game.deltaState)
+	//console.log(game.deltaState)
 }
 
 // Initialise game loop
 game.start();
 
 // Add some random players
-game.addBot('Bot1'); game.addBot('Bot2');
+var count = 0;
+game.schedule(function() {
+	if(count < 6) {
+		var t = this.addBot('Bot'+(Math.floor(Math.random() * 100) / 100));
+
+		console.log(t);
+		io.sockets.emit('join', t.toJSON() );
+
+		
+		count++;
+	}
+	
+	console.log('test');
+	
+},
+1000, true);
+
 
 // Setup connection handler
 io.sockets.on('connection', function(socket) {

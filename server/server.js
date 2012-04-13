@@ -31,7 +31,18 @@ game.onTick = function(){
 game.start();
 
 // Add some random players
-game.addBot('Bot1'); game.addBot('Bot2');
+var count = 0;
+game.schedule(function() {
+	if(count < 6) {
+		var t = this.addBot('Bot'+(Math.floor(Math.random() * 100) / 100));
+		count++;
+	}
+	
+	console.log('test');
+	
+},
+1000, true);
+
 
 // Setup connection handler
 io.sockets.on('connection', function(socket) {
