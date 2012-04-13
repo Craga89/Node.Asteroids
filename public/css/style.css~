@@ -1,6 +1,8 @@
 body {
   padding: 50px;
+  
   font: 14px "Lucida Grande", Helvetica, Arial, sans-serif;
+  color: white;
   background-color: black;
 }
 
@@ -9,8 +11,9 @@ a {
 }
 
 canvas{
+	position: absolute;
+	left: 0; top: 0;
 	display: block;
-	margin: 0 auto;
-	
+
 	background-color: white;
 }

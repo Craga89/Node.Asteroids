@@ -234,6 +234,8 @@
 					return !!player.shooting;
 				},
 				200, true);
+
+				player.shoot(); // Fire off a single shot immediately
 			}
 		}
 

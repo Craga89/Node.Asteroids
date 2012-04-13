@@ -18,12 +18,12 @@
 		this.owner = params.owner;
 
 		this.pos = vec3.create(params.pos);
-		this.initialPos = vec3.create(params.initialPos || params.pos);
 		this.lastPos = vec3.create(params.lastPos || params.pos);
 		this.velocity = vec3.create(params.velocity);
 		this.angle = params.angle;
 
 		this.duration = params.duration || 750;
+		this.lifespan = params.lifespan || 750;
 		this.strength = params.strength || 30;
 		this.radius = 2;
 	};
@@ -35,7 +35,7 @@
 
 	// Setup merge properties
 	Bullet._mergeProps = Entity._mergeProps.concat([
-		'owner', 'radius', 'angle', 'strength', 'duration'
+		'owner', 'radius', 'angle', 'strength', 'duration', 'lifespan'
 	]);
 
 	Bullet.prototype.computeState = function(delta) {
@@ -49,9 +49,8 @@
 		vec3.set(pos, this.lastPos);
 
 		// If we're outside the weapons range... destroy it
-		if((this.duration -= delta) <= 0) {
-			return this.destroy();
-		}
+		if((this.lifespan -= delta) <= 0) { return this.destroy(); }
+		this.registerChange('lifespan');
 
 		// Calculate new position based on velocity
 		vec3.add(pos, [ vel[0] * delta, vel[1] * delta, 0 ]);

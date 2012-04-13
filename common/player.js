@@ -229,7 +229,6 @@
 		if(!isNaN(cmd.space)) {
 			if((this.shooting = cmd.space)) {
 				this._game.schedule(function() {
-					console.log('shooting!', player);
 					if(player.shooting) { player.shoot(); }
 					return !!player.shooting;
 				},

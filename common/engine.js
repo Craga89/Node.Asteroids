@@ -19,8 +19,8 @@
 		var game = this;
 
 		/* Constants */
-		this.WIDTH = 950;
-		this.HEIGHT = 500;
+		this.WIDTH = 3000;
+		this.HEIGHT = 3000;
 		this.STATES = 300;
 		this.TICK_RATE = Math.round(1000 / 30);
 		this.CMD_RATE = Math.round(1000 / 30);
@@ -150,7 +150,7 @@
 			schedule = this.scheduleBuffer,
 			entities = state.entities,
 			entityCount, entity, entity2, outside, 
-			commands, command, collisionType, velocity,
+			commands, command, collisionType,
 			ongoingSchedules = [], newEntities = [],
 			newMap = {}, i, result, j, task;
 
@@ -191,19 +191,10 @@
 			// Compute new state and register it
 			entity.computeState(delta);
 
-			// Check if entity is heading outside the world boundaries...
+			// Loop players round the world
 			if( (outside = entity.outsideWorld(this.WIDTH, this.HEIGHT)) ) {
-				velocity = entity.velocity;
-				switch(entity.type) {
-					case 'player':
-						// Loop players round the world
-						if(outside[0] !== 0) { entity.pos[0] = outside[0] < 0 ? this.WIDTH : 0 }
-						if(outside[1] !== 0) { entity.pos[1] = outside[1] < 0 ? this.HEIGHT : 0 }
-						break;
-
-					// Remove all other objects when off-screen
-					default: entity.destroy(); continue; break;
-				}
+				if(outside[0] !== 0) { entity.pos[0] = outside[0] < 0 ? this.WIDTH : 0 }
+				if(outside[1] !== 0) { entity.pos[1] = outside[1] < 0 ? this.HEIGHT : 0 }
 			}
 
 			// Check for collisions with other objects

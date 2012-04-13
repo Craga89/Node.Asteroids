@@ -48,7 +48,7 @@ var renderer = new Renderer({
 soundManager.url = '/js/client/swf';
 soundManager.flashVersion = 9;
 soundManager.useHTML5Audio = false;
-soundManager.useFlashBlock = true;
+soundManager.useFlashBlock = false;
 soundManager.useHighPerformance = true;
 soundManager.useFastPolling = true;
 soundManager.onready(function() {

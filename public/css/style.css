@@ -11,8 +11,7 @@ a {
 }
 
 canvas{
+	position: absolute;
+	left: 0; top: 0;
 	display: block;
-	margin: 0 auto;
-	
-	background-color: white;
 }

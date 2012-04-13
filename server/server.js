@@ -38,8 +38,6 @@ game.schedule(function() {
 		count++;
 	}
 	
-	console.log('test');
-	
 },
 1000, true);
 
