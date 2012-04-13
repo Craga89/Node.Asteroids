@@ -21,32 +21,39 @@
 		// Main properties
 		this.id = params.id;
 		this.type = 'player';
-		this.bot = params.bot || false;
+		this.subtype = params.subtype || 'player';
 
 		// Vectors
 		this.pos = vec3.create(params.pos);
 		this.lastPos = vec3.create(params.lastPos || params.pos);
-		this.velocity = vec3.create(params.velocity || [ 0.15, 0.15, 0 ]);
+		this.velocity = vec3.create(params.velocity);
 		this.acceleration = vec3.create(params.acceleration || [0.99, 0.99, 0 ]);
 		this.thrust = params.thrust || 0;
 
 		// Angle properties
 		this.rotateBy = params.rotate || 0;
+		this.angularVel = (Math.PI / 8);
 		this.angle = params.angle || 0;
 
 		// Health and shield properties
-		this.health = params.health || 100;
 		this.shield = params.shield || 100;
+		this.shieldMax = params.shieldMax || 100;
 		this.shieldQuality = 0.5;
 		this.shieldRegen = 0.075;
+		this.shieldPause = params.shieldPause || 0;
+
+		// Weapon properties
+		this.weapon = 'Bullet';
+		this.shooting = params.shooting || false;
+		this.shootRate = 150;
+
+		// Bullet properties
+		this.bulletStrength = 30;
+		this.bulletRange = 200;
 
 		// Set properties
 		this.rebound = 0.96;
-		this.radius = 15;
-
-		// Shooting properties
-		this.shooting = params.shooting || false;
-		this.shootRate = 150;
+		this.radius = 18;
 	};
 
 	// Inherit from Entity
@@ -56,9 +63,10 @@
 
 	// Merge properties
 	Player._mergeProps = Entity._mergeProps.concat([
-		'bot', 'thrust', 'rotateBy', 'angle', 'health',
+		'thrust', 'rotateBy', 'angle',
 		'shield', 'shieldQuality', 'shieldRegen', 'rebound',
-		'shooting', 'shootRate'
+		'shooting', 'shootRate', 'angularVel', 'bulletStrength',
+		'bulletRange', 'shieldPause', 'shieldMax'
 	]);
 
 	Player.prototype.computeState = function(delta) {
@@ -69,14 +77,11 @@
 			thrust = this.thrust,
 			outside, player, angle;
 
-		// If health is zero we're dead!
-		if(this.health <= 0) { this.destroy(); }
-
 		// Set last pos
 		vec3.set(pos, this.lastPos);
 
 		// Add rotation
-		this.angle += (Math.PI / 8) * this.rotateBy;
+		this.angle += this.angularVel * this.rotateBy;
 		if(this.rotateBy) { this.registerChange('angle'); }
 
 		// Calculate new velocity based on acceleration and thrust
@@ -92,8 +97,15 @@
 		vec3.add(pos, [ vel[0] * delta, vel[1] * delta, 0 ]);
 		this.registerChange('pos');
 
-		// Regenerate shield
-		this.adjustShield(this.shieldRegen);
+		// Regenerate shield or reduce pause counter
+		if((this.shieldPause -= delta) <= 0) {
+			this.shieldPause = 0;
+
+			// Don't regenerate above 100%
+			if(this.shield <= 100) {
+				this.adjustShield(this.shieldRegen);
+			}
+		}
 	};
 
 	
@@ -132,45 +144,40 @@
 	};
 
 	Player.prototype.handleHit = function(bullet) {
-		var shield = this.shield;
+		var shield = this.shield,
+			amount = bullet.strength * this.shieldQuality;
+
+		// If shield is zero and we got hit... die!
+		if((shield - amount) <= 0) { this.destroy(); }
 
 		// Reduce shield strength until zero...
-		this.adjustShield(-bullet.strength * this.shieldQuality);
+		else{ this.adjustShield(-amount); }
+
+		// Also add a brief pause to shield regen
+		this.shieldPause += (1 - ((shield - amount) / shield)) * 300;
 
 		// Remove bullet
 		bullet.destroy();
+
+		// Register event
+		this.registerEvent('hit', bullet.id);
+	};
+
+	Player.prototype.setShield = function(val) {
+		if(val !== this.shield) {
+			this.shield = val;
+			this.registerChange('shield', Math.floor(val));
+		}
 	};
 
 	Player.prototype.adjustShield = function(amount) {
-		var shield = this.shield,
-			floored;
-		
-		// Adjust shield strength
-		floored = Math.floor(
-			this.shield = Math.max(Math.min(100, shield + amount), 0)
+		var newShield = this.shield + amount;
+
+		// Set shield strength
+		this.setShield(
+			Math.max(Math.min(this.shieldMax, newShield), 0)
 		);
-
-		// If the shield is down... hurt health!
-		if(floored <= 0) {
-			this.adjustHealth( -(shield - amount) );
-		}
-
-		// Inform game of strength change if there was any
-		if(Math.floor(shield) !== floored) {
-			this.registerChange('shield', floored);
-		}
-	}
-
-	Player.prototype.adjustHealth = function(amount) {
-		health = this.health;
-
-		// When health reaches zero... kill player
-		if(amount > health) { this.destroy(); }
-		else {
-			this.health = Math.round(Math.max(health + amount, 0));
-			if(health !== this.health) { this.registerChange('health'); }
-		}
-	}
+	};
 
 	Player.prototype.move = function(amount) {
 		this.thrust = amount;
@@ -180,13 +187,55 @@
 		this.rotateBy = value;
 	};
 
-	Player.prototype.shoot = function(bool) {
-		this.shooting = !!bool;
-	}
+	Player.prototype.shoot = function() {
+		var game = this._game,
+			state = game.state,
+			pos = this.pos,
+			vel = this.velocity,
+			angle = this.angle,
+			id = 'bullet_' + game.lastID++,
+			bullet;
+
+		// Create the new bullet
+		state.entityMap[id] = -1 + state.entities.push((
+			bullet = new Bullet({
+				id: id,
+				owner: this.id,
+				pos: [ pos[0], pos[1], pos[2] ],
+				velocity: vec3.create([
+					vel[0] + -Math.sin(angle) * 0.3,
+					vel[1] + Math.cos(angle) * 0.3,
+					0
+				]),
+				angle: angle,
+				range: this.bulletRange,
+				strength: this.bulletStrength
+			},
+			game)
+		));
+
+		// Register bullet and event
+		bullet.registerChange( bullet.toJSON() );
+		bullet.registerEvent('shoot', this.id);
+
+		return this;
+	};
+
 
 	Player.prototype.handleCmd = function(cmd) {
+		var player = this;
+
 		// Handle shooting
-		if(!isNaN(cmd.space)) { this.shoot(cmd.space); }
+		if(!isNaN(cmd.space)) {
+			if((this.shooting = cmd.space)) {
+				this._game.schedule(function() {
+					console.log('shooting!', player);
+					if(player.shooting) { player.shoot(); }
+					return !!player.shooting;
+				},
+				200, true);
+			}
+		}
 
 		// Rotate on left/right
 		if(!isNaN(cmd.left) || !isNaN(cmd.right)) {
@@ -195,7 +244,7 @@
 
 		// Thrust on up/down
 		if(!isNaN(cmd.up)) {
-			this.move(cmd.up ? 0.02 : 0);
+			this.move(cmd.up ? 0.01 : 0);
 		}
 	}
 

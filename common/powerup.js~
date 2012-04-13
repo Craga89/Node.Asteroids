@@ -20,7 +20,7 @@
 	Powerup.prototype.constructor = Powerup;
 
 	// Merge properties
-	Powerup._mergeProps = ['type', 'deltaScope', 'powerup', 'remove'];
+	Powerup._mergeProps = ['id', 'pos', 'type', 'subtype', 'powerup', 'radius', 'remove'];
 
 	// Simply inform the server of this position
 	Powerup.prototype.computeState = function(delta) {
@@ -29,7 +29,7 @@
 
 	// Activates a powerup (destroys it)
 	Powerup.prototype.activate = function(player) {
-		this.registerEvent('powerup', player.id);
+		this.registerEvent('powerup', this.subtype, player.id);
 		this.destroy();
 	}
 
@@ -44,7 +44,7 @@
 		this._game = game;
 
 		this.id = params.id;
-		this.powerup = 'shield';
+		this.subtype = 'shield';
 		this.pos = vec3.create(params.pos);
 
 		this.power = 30;
@@ -52,9 +52,7 @@
 	}
 
 	// Merge properties
-	Shield._mergeProps = Powerup._mergeProps.concat([
-		'id', 'pos', 'power', 'radius'
-	]);
+	Shield._mergeProps = Powerup._mergeProps.concat([ 'power' ]);
 
 	// Inherit from Entity
 	Shield.prototype = new Powerup();
@@ -63,16 +61,55 @@
 
 	// Activates the power up on a particular player
 	Shield.prototype.activate = function(player) {
-		// Increase players shield
-		player.adjustShield( this.power );
+		// Increase players shield (not above 100)
+		player.setShield(
+			Math.min(player.shield + this.power, 100)
+		);
 
 		// Call super-class method
-		this._super.activate.call(this, arguments);
+		this._super.activate.apply(this, arguments);
 	}
 
-	//exports.Powerup = Powerup;
-	if(CLIENT) { exports = exports.Powerups = {}; }
 
+	/**
+	 * Shield power increase
+	 *
+	 * Increases your maximum shield power temporarily
+	 */
+	function ShieldUp(params, game) {
+		// Internals
+		this._game = game;
+
+		this.id = params.id;
+		this.subtype = 'shieldup';
+		this.pos = vec3.create(params.pos);
+
+		this.increase = 30;
+		this.radius = 7;
+	}
+
+	// Merge properties
+	ShieldUp._mergeProps = Powerup._mergeProps.concat([ 'increase' ]);
+
+	// Inherit from Entity
+	ShieldUp.prototype = new Powerup();
+	ShieldUp.prototype._super = Powerup.prototype;
+	ShieldUp.prototype.constructor = ShieldUp;
+
+	// Activates the power up on a particular player
+	ShieldUp.prototype.activate = function(player) {
+		// Increase players shield to a new max based on increase
+		player.setShield(
+			player.shieldMax = 100 + this.increase
+		);
+
+		// Call super-class method
+		this._super.activate.apply(this, arguments);
+	}
+	
+	//exports.Powerup = Powerup;
+	exports = CLIENT ? (exports.Powerups = {}) : exports;
 	exports.Shield = Shield;
+	exports.ShieldUp = ShieldUp;
 
 })(typeof global === 'undefined' ? window : exports, typeof global === 'undefined');

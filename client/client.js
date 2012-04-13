@@ -24,6 +24,14 @@ var handler = new EventHandler({
 
 	shoot: function() {
 		soundManager.play('laser');
+	},
+
+	destroy: function(id) {
+		var entity = this.getEntityById(id);
+		
+		if(entity && entity.type === 'player') {
+			soundMananger.play('death');
+		}
 	}
 });
 
@@ -39,7 +47,7 @@ var renderer = new Renderer({
 // Setup sound manager
 soundManager.url = '/js/client/swf';
 soundManager.flashVersion = 9;
-soundManager.useHTML5Audio = true;
+soundManager.useHTML5Audio = false;
 soundManager.useFlashBlock = true;
 soundManager.useHighPerformance = true;
 soundManager.useFastPolling = true;
@@ -62,7 +70,7 @@ soundManager.onready(function() {
 
 	soundManager.createSound({
 		id: 'hit',
-		url: '/audio/hit.mp3',
+		url: '/audio/boom.mp3',
 		autoLoad: true,
 		multiShotEvents:true,
 		volume: 50
@@ -74,7 +82,15 @@ soundManager.onready(function() {
 		autoLoad: true,
 		multiShotEvents:true,
 		volume: 80
-	})
+	});
+
+	soundManager.createSound({
+		id: 'death',
+		url: '/audio/hit2.mp3',
+		autoLoad: true,
+		multiShotEvents:true,
+		volume: 80
+	});
 });
 
 // Setup input handler

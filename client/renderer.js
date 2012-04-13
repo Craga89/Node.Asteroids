@@ -36,14 +36,15 @@
 	}
 
 	Renderer.prototype.start = function() {
+		var self = this;
 		requestAnimationFrame(function() {
 			self.render.call(self);
+			self.start();
 		});
 	}
 
 	Renderer.prototype.render = function() {
-		var self = this,
-			entities = this.game.state.entities,
+		var entities = this.game.state.entities,
 			entity, i;
 
 		// Clear the canvas
@@ -54,7 +55,7 @@
 			// Check to make sure the entity isn't removed
 			if((entity = entities[i]).remove) { continue };
 
-			self.renderEntity(entity);
+			this.renderEntity(entity);
 		}
 	};
 
@@ -126,7 +127,7 @@
 			ctx.stroke();
 		}
 
-		// Render the player name and details
+		// Render the player name
 		ctx.font = '8pt monospace';
 		ctx.fillStyle = 'black';
 		ctx.textAlign = 'center';
@@ -134,15 +135,13 @@
 
 		ctx.font = '7pt monospace';
 		ctx.fillStyle = 'blue';
-		ctx.fillText(Math.floor(player.shield) + '%', -radius, radius + r2 + ctx.lineWidth);
-		ctx.fillStyle = 'red';
-		ctx.fillText(Math.floor(player.health) + '%', radius, radius + r2 + ctx.lineWidth);
+		ctx.fillText(Math.floor(player.shield) + '%', 0, radius + r2 + ctx.lineWidth);
 	}
 
 	Renderer.prototype._renderPowerup = function(powerup) {
 		var ctx = this.ctx;
 
-		ctx.fillStyle = 'cyan';
+		ctx.fillStyle = powerup.subtype === 'shield' ? 'cyan' : 'green';
 		ctx.beginPath();
 		ctx.arc(0, 0, powerup.radius, 0, 2 * Math.PI, true);
 		ctx.closePath();

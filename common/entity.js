@@ -19,7 +19,7 @@
 	 * Determines which properties get merged when calling
 	 * the .merge() method below.
 	 */
-	Entity._mergeProps = ['id', 'type', 'pos', 'lastPos', 'velocity', 'acceleration', 'remove'];
+	Entity._mergeProps = ['id', 'type', 'subtype', 'pos', 'lastPos', 'velocity', 'acceleration', 'radius', 'remove'];
 
 	/**
 	 * Merges two Entitys of the same constructor together.
@@ -112,7 +112,7 @@
 	Entity.prototype.destroy = function() {
 		this.remove = true;
 		this.registerChange('remove', true);
-		this.registerEvent('destroy');
+		this.registerEvent('destroy', this.id);
 	};
 
 	exports.Entity = Entity;

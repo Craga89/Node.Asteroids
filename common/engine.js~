@@ -36,6 +36,7 @@
 
 		// User command buffer
 		this.commandBuffer = {};
+		this.scheduleBuffer = [];
 
 		// Trackers
 		this.me = null;
@@ -54,6 +55,26 @@
 		this.eventHandler = handler || { fire: function() {} }
 	};
 
+	Game.instanceMap = {
+		'player': {
+			'player': Player
+		},
+		'bullet': {
+			'bullet': Bullet
+		},
+		'powerup': {
+			'shield': Powerups.Shield,
+			'shieldup': Powerups.ShieldUp
+		}
+	};
+
+	Game.prototype._instantiate = function(entity) {
+		var constr = Game.instanceMap[entity.type][entity.subtype];
+
+		// Depending on type, instantiate.
+		return constr ? new constr(entity, this) : false;
+	}
+
 	Game.prototype.update = function(timeStamp) {
 		var delta = timeStamp - this.state.timeStamp;
 
@@ -68,16 +89,24 @@
 	Game.prototype.start = function(skew) {
 		console.log('Starting game...');
 		this.timer.start(skew);
-
-		this.registerEvent('start');
 	};
 
 	Game.prototype.stop = function() {
 		this.timer.stop();
 	};
 
+	Game.prototype.schedule = function(callback, ms, repeat) {
+		callback._ms = ms;
+		this.scheduleBuffer.push([ callback, ms, repeat ]);
+	};
+
 	Game.prototype.queueCommand = function(id, data) {
-		return (this.commandBuffer[id] = (this.commandBuffer[id] || []).concat(data)), this;
+		var buffer = this.commandBuffer;
+		
+		if(typeof buffer[id] === 'undefined') { buffer[id] = []; }
+		buffer[id] = buffer[id].concat(data);
+
+		return this;
 	};
 
 	/**
@@ -117,12 +146,12 @@
 	 */
 	Game.prototype.computeState = function(delta) {
 		var state = this.state,
+			schedule = this.scheduleBuffer,
 			entities = state.entities,
-			entityCount = entities.length,
- 			i = entities.length, k = 0, j,
-			entity, entity2, outside, velocity,
-			commands, command, timer, collisionType,
-			newEntities = [], newMap = {};
+			entityCount, entity, entity2, outside, 
+			commands, command, collisionType, velocity,
+			ongoingSchedules = [], newEntities = [],
+			newMap = {}, i, result, j, task;
 
 		// Reset the delta state
 		this.deltaState = {};
@@ -131,7 +160,7 @@
 		state.timeStamp = this.state.timeStamp + delta;
 
 		// Execute user commands first
-		entityCount = entities.length;
+		i = entities.length;
 		while((entity = entities[--i])) {
 			if(!(commands = this.commandBuffer[ entity.id ])) { continue; }
 
@@ -139,9 +168,15 @@
 			while((command = commands.shift())) {
 				entity.handleCmd(command);
 			}
+		}
 
-			// Handle shooting
-			this._handleShooting(entity);
+		// Execute scheduled changes
+		i = schedule.length;
+		while((task = schedule[--i])) {
+			if((task[1] -= delta) <= 0) { result = task[0].call(this, delta); }
+			if((task[2] == true && result && (task[0] = task[0]._ms)) || task[1] > 0) {
+				ongoingSchedules.push(task);
+			}
 		}
 
 		// Check for intersections and world boundaries
@@ -200,46 +235,10 @@
 			newMap[ entity.id ] = newEntities.push(entity) - 1;
 		}
 
-		// Reset entities
+		// Reset objects
 		this.state.entities = newEntities;
 		this.state.entityMap = newMap;
-	};
-
-	Game.prototype._handleShooting = function(entity) {
-		if(entity.shooting) {
-			this.shoot(entity);
-		}
-	}
-
-	Game.prototype.shoot = function(player) {
-		var state = this.state,
-			pos = player.pos,
-			vel = player.velocity,
-			angle = player.angle,
-			id = 'bullet_' + this.lastID++,
-			bullet;
-
-		// Create the new bullet
-		state.entityMap[id] = -1 + state.entities.push((
-			bullet = new Bullet({
-				id: id,
-				owner: player.id,
-				pos: [ pos[0], pos[1], pos[2] ],
-				velocity: vec3.create([
-					vel[0] + -Math.sin(angle) * 0.3,
-					vel[1] + Math.cos(angle) * 0.3,
-					0
-				]),
-				angle: angle
-			},
-			this)
-		));
-
-		// Register bullet and event
-		bullet.registerChange( bullet.toJSON() );
-		bullet.registerEvent('shoot', player.id);
-
-		return this;
+		this.scheduleBuffer = ongoingSchedules;
 	};
 
 	Game.prototype._addPlayer = function(data) {
@@ -281,7 +280,7 @@
 	};
 
 	Game.prototype.leave = function(id) {
-		var entity = this.playerExists(id);
+		var entity = this.getPlayerById(id);
 
 		// If entity exists, set remove flag
 		if(entity) { entity.destroy(); }
@@ -330,16 +329,8 @@
 		while(entities[++i]) {
 			entity = entities[i];
 
-			// Depending on type, instantiate.
-			e = entity.type === 'player' ? new Player(entity, this) :
-				entity.type === 'bullet' ? new Bullet(entity, this) :
-				entity.type === 'powerup' ?
-					entity.powerup === 'shield' ? new Powerups.Shield(entity, this) :
-					false :
-				false;
-
 			// If it was a vlid entity type...
-			if(e) {
+			if((e = this._instantiate(entity))) {
 				// Push into state entity array
 				state.entityMap[ entity.id ] = state.entities.push(e) - 1;
 
@@ -374,7 +365,8 @@
 
 			// If we're removing the entity... go!
 			if(entity && deltaEntity.remove) {
-				entity.destroy();
+				// Destory the entity and remove it from the entity map
+				entity.remove = true;
 				delete entityMap[i];
 			}
 			
@@ -384,16 +376,10 @@
 
 				// Make sure we aren't re-creating an entity
 				if(!state.entityMap[ entity.id ]) {
-					// Depending on type, instantiate.
-					e = entity.type === 'player' ? new Player(entity, this) :
-						entity.type === 'bullet' ? new Bullet(entity, this) :
-						entity.type === 'powerup' ?
-							entity.powerup === 'shield' ? new Powerups.Shield(entity, this) :
-							false :
-						false;
-
-					// Push into state entity array
-					if(e) { entityMap[ entity.id ] = entities.push(e) - 1; }
+					// Push into state entity array if type was valid
+					if((e = this._instantiate(entity))) {
+						entityMap[ entity.id ] = entities.push(e) - 1;
+					}
 				}
 			}
 
@@ -408,14 +394,17 @@
 		}
 	};
 
-	Game.prototype.entityExists = function(id) {
+	Game.prototype.getEntityById = function(id) {
 		return this.state.entities[ this.state.entityMap[id] ] || false;
 	};
 
-	Game.prototype.playerExists = function(id) {
-		var entity = this.state.entities[ this.state.entityMap[id] ];
+	Game.prototype.getPlayerById = function(id) {
+		var entity = this.getEntityById(id);
 		return entity && entity.type === 'player' ? entity : false;
-	}
+	};
+
+	Game.prototype.entityExists = function(id) { return !!this.getEntityById(id); };
+	Game.prototype.playerExists = function(id) { return !!this.getPlayerById(id); };
 
 	exports.Game = Game;
 

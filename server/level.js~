@@ -16,7 +16,7 @@ Level.generate = function(game) {
 
 	// Add some power ups
 	for(i in Powerups) {
-		for(j = 0; j < random(0, 4); j++) {
+		for(j = 0; j < random(2, 4); j++) {
 			id = 'powerup_' + (game.lastID++);
 			state.entityMap[id] = -1 + state.entities.push(
 				new Powerups[i]({
@@ -31,8 +31,6 @@ Level.generate = function(game) {
 			)
 		}
 	}
-
-	console.log(state.entities[0].toJSON);
 
 	return state;
 }

@@ -14,18 +14,18 @@
 		this._game = game;
 
 		this.id = params.id;
-		this.type = 'bullet';
+		this.type = this.subtype = 'bullet';
 		this.owner = params.owner;
 
 		this.pos = vec3.create(params.pos);
 		this.initialPos = vec3.create(params.initialPos || params.pos);
 		this.lastPos = vec3.create(params.lastPos || params.pos);
 		this.velocity = vec3.create(params.velocity);
-
-		this.range = 200;
-		this.radius = 2;
 		this.angle = params.angle;
-		this.strength = 30;
+
+		this.range = params.range || 200;
+		this.strength = params.strength || 30;
+		this.radius = 2;
 	};
 
 	// Inherit from Entity
