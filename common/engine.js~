@@ -19,8 +19,8 @@
 		var game = this;
 
 		/* Constants */
-		this.WIDTH = 640;
-		this.HEIGHT = 480;
+		this.WIDTH = 950;
+		this.HEIGHT = 600;
 		this.STATES = 300;
 		this.TICK_RATE = Math.round(1000 / 30);
 		this.CMD_RATE = Math.round(1000 / 30);
@@ -266,7 +266,7 @@
 	};
 
 	Game.prototype.addBot = function(id) {
-		return this._addPlayer({
+		var e = this._addPlayer({
 			id: id,
 			subtype: 'bot',
 			pos: vec3.create([
@@ -276,6 +276,11 @@
 			]),
 			angle: random(0, Math.PI / 2)
 		});
+
+		// Register it
+		e.registerChange( e.toJSON() );
+
+		return e;
 	};
 
 	Game.prototype.leave = function(id) {
