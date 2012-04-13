@@ -14,7 +14,7 @@
 		this._game = game;
 
 		this.id = params.id;
-		this.type = 'bullet';
+		this.type = this.subtype = 'bullet';
 		this.owner = params.owner;
 
 		this.pos = vec3.create(params.pos);
