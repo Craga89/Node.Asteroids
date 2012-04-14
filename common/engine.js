@@ -70,7 +70,7 @@
 	};
 
 	Game.prototype._instantiate = function(entity) {
-		var constr = Game.instanceMap[entity.type][entity.subtype];
+		var constr = (Game.instanceMap[entity.type] || {})[entity.subtype];
 
 		// Depending on type, instantiate.
 		return constr ? new constr(entity, this) : false;

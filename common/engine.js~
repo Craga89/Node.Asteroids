@@ -19,8 +19,8 @@
 		var game = this;
 
 		/* Constants */
-		this.WIDTH = 400;
-		this.HEIGHT = 1000;
+		this.WIDTH = 2500;
+		this.HEIGHT = 2500;
 		this.STATES = 300;
 		this.TICK_RATE = Math.round(1000 / 30);
 		this.CMD_RATE = Math.round(1000 / 30);
@@ -70,7 +70,7 @@
 	};
 
 	Game.prototype._instantiate = function(entity) {
-		var constr = Game.instanceMap[entity.type][entity.subtype];
+		var (constr = Game.instanceMap[entity.type] || {})[entity.subtype];
 
 		// Depending on type, instantiate.
 		return constr ? new constr(entity, this) : false;
