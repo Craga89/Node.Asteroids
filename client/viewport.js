@@ -98,25 +98,30 @@
 
 	
 	Viewport.prototype.drawBounds = function(ctx) {
+		var posX, posY, width, height;
+
 		// Calculate pos
-		var pos = vec3.create([
-			0.0 > (this.pos[0] - this.width / 2) ? this.worldXToScreenX(0.0) : 0,
-			0.0 > (this.pos[1] - this.height / 2) ? this.worldYToScreenY(0.0) : 0,
-			0
-		]);
+		posX = this.worldWidth < this.width || (this.pos[0] - this.centre[0]) > 0 ?
+			0 : this.worldXToScreenX(0.0);
 
-		width = this.worldWidth < (this.pos[0] + this.width/2) ?
-			this.worldXToScreenX(this.worldWidth) : this.width;
+		posY = this.worldHeight < this.height || (this.pos[1] - this.centre[1]) > 0 ?
+			0 : this.worldYToScreenY(0.0);
 
-		height = this.worldHeight < (this.pos[1] + this.height/2) ?
+		// Calculate dimensions
+		width = this.worldWidth < this.width ? this.worldWidth :
+			this.worldWidth < (this.pos[0] + this.centre[0]) ?
+				this.worldXToScreenX(this.worldWidth) : this.width;
+
+		height = this.worldHeight < this.height ? this.worldHeight :
+			this.worldHeight < (this.pos[1] + this.centre[0]) ?
 			this.worldYToScreenY(this.worldHeight) : this.height;
 
 		ctx.save();
 		ctx.strokeStyle = 'rgb(0, 100, 255)';
 		ctx.lineWidth = 3;
 		ctx.strokeRect(
-			pos[0] - ctx.lineWidth,
-			pos[1] - ctx.lineWidth,
+			posX - ctx.lineWidth,
+			posY - ctx.lineWidth,
 			width + (ctx.lineWidth * 2),
 			height + (ctx.lineWidth * 2)
 		);

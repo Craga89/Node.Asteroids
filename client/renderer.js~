@@ -45,8 +45,10 @@
 
 		// Ensure viewport updates with window resize
 		window.onresize = function() {
-			self.viewport.width = self.canvas.width = window.innerWidth;
-			self.viewport.height = self.canvas.height = window.innerHeight;
+			self.viewport.centre = [
+				(self.viewport.width = self.canvas.width = window.innerWidth) / 2,
+				(self.viewport.height = self.canvas.height = window.innerHeight) / 2
+			]
 		}
 
 		// Canvas cache
@@ -54,6 +56,7 @@
 
 		// Flags
 		this.drawDirection = params.showDirection || false;
+		this.drawBoundary = params.drawBoundary || true;
 
 		// Create some stars
 		this.stars = [];
@@ -92,24 +95,25 @@
 			game = this.game,
 			canvas = this.canvas,
 			entities = game.state.entities,
+			viewport = this.viewport,
 			entity, i, t;
-
-		// Clear the canvas and use black background
-		ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-		ctx.fillStyle = 'rgb(20,20,20)';
-		ctx.fillRect(0, 0, canvas.width, canvas.height);
 
 		// If we aren't rendering a specific canvas area...
 		if(typeof coords === 'undefined') {
-			vec3.set(this.game.me.pos, this.viewport.pos);
-
 			// Clear the canvas and use black background
-			ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+			ctx.clearRect(0, 0, canvas.width, canvas.height);
 			ctx.fillStyle = 'rgb(20,20,20)';
 			ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-			// Render adjacent world tiles if needed
-			this._drawTiles(ctx);
+			if(game.WIDTH > viewport.width || game.HEIGHT > viewport.height) {
+				// Make viewport follow the player
+				viewport.pos[0] = game.WIDTH > viewport.width ? game.me.pos[0] : viewport.centre[0];
+				viewport.pos[1] = game.HEIGHT > viewport.height ? game.me.pos[1] : viewport.centre[1];
+				if(game.HEIGHT > viewport.height) console.log(viewport.pos[1])
+
+				// Render adjacent world tiles if needed
+				this._drawTiles(ctx);
+			}
 		}
 
 		// Set viewport position if coordinates were passed...
@@ -129,7 +133,7 @@
 
 		// Draw the viewport boundaries
 		if(typeof coords === 'undefined' && this.drawBoundary) {
-			this.viewport.drawBounds(ctx);
+			viewport.drawBounds(ctx);
 		}
 	};
 
@@ -138,36 +142,49 @@
 			viewport = this.viewport, mePos = game.me.pos,
 			vPos = viewport.pos, vCentre = viewport.centre,
 			vWidth = viewport.width, vHeight = viewport.height,
-			gWidth = game.WIDTH, gHeight = game.HEIGHT;
+			gWidth = game.WIDTH, gHeight = game.HEIGHT,
+			tileX = vWidth <= gWidth, tileY = vHeight <= gHeight;
 
 		// Determine transform coords
 		t = [
 			vCentre[0] - (gWidth - vPos[0]),
 			gWidth - vCentre[0] - (gWidth - vPos[0]),
 			vCentre[1] - (gHeight - vPos[1]),
-			gHeight - vCentre[1] - (gHeight - vPos[1]),
+			gHeight - vCentre[1] - (gHeight - vPos[1])
 		]
 
 		// Draw parallel tiles
-		if(t[1] < 0) { this._drawTile(ctx, -t[1] - vWidth, 0, [ gWidth - vCentre[0], mePos[1] ]); } // Left
-		else if(t[0] > 0) { this._drawTile(ctx, vWidth - t[0], 0, [ vCentre[0], mePos[1] ]); } // Right
-		if(t[3] < 0) { this._drawTile(ctx, 0, -t[3] - vHeight, [ mePos[0], gHeight - vCentre[1] ]); } // Top
-		else if(t[2] > 0) { this._drawTile(ctx, 0, vHeight - t[2], [ mePos[0], vCentre[1] ]); } // Bottom
+		if(tileX) {
+			if(t[1] < 0) { this._drawTile(ctx, -t[1] - vWidth, 0, [ gWidth - vCentre[0], vPos[1] ]); } // Left
+			else if(t[0] > 0) { this._drawTile(ctx, vWidth - t[0], 0, [ vCentre[0], vPos[1] ]); } // Right
+		}
+		if(tileY) {
+			if(t[3] < 0) { this._drawTile(ctx, 0, -t[3] - vHeight, [ vPos[0], gHeight - vCentre[1] ]); } // Top
+			else if(t[2] > 0) { this._drawTile(ctx, 0, vHeight - t[2], [ vPos[0], vCentre[1] ]); } // Bottom
+		}
 
 		// Draw diagonal tiles
-		if(t[1] < 0 && t[3] < 0) { this._drawTile(ctx, -t[1] - vWidth, -t[3] - vHeight, [ gWidth - vCentre[0], gHeight - vCentre[1] ]); } // Top left
-		else if(t[0] > 0 && t[3] < 0) { this._drawTile(ctx, vWidth - t[0], -t[3] - vHeight, [ vCentre[0], gHeight - vCentre[1] ]); } // Top right
-		else if(t[1] < 0 && t[2] > 0) { this._drawTile(ctx, -t[1] - vWidth, vHeight - t[2], [ gWidth - vCentre[0], vCentre[1] ]); } // Bottom left
-		else if(t[0] > 0 && t[2] > 0) { this._drawTile(ctx, vWidth - t[0], vHeight - t[2], vCentre); } // Bottom right
-
-		// Reset viewport coordinates
-		vec3.set(mePos, vPos);
+		if(tileX && tileY) {
+			if(t[1] < 0 && t[3] < 0) { this._drawTile(ctx, -t[1] - vWidth, -t[3] - vHeight, [ gWidth - vCentre[0], gHeight - vCentre[1] ]); } // Top left
+			else if(t[0] > 0 && t[3] < 0) { this._drawTile(ctx, vWidth - t[0], -t[3] - vHeight, [ vCentre[0], gHeight - vCentre[1] ]); } // Top right
+			else if(t[1] < 0 && t[2] > 0) { this._drawTile(ctx, -t[1] - vWidth, vHeight - t[2], [ gWidth - vCentre[0], vCentre[1] ]); } // Bottom left
+			else if(t[0] > 0 && t[2] > 0) { this._drawTile(ctx, vWidth - t[0], vHeight - t[2], vCentre); } // Bottom right
+		}
 	}
 
 	Renderer.prototype._drawTile = function(ctx, x, y, coords) {
+		var viewport = this.viewport,
+			oldPos = vec3.set(viewport.pos, []);
+
+		// Save and translate the canvas
 		ctx.save();
 		ctx.translate(Math.round(x), Math.round(y));
+
+		// Render the tile
 		this.render(coords);
+
+		// Reset viewport coordinates and restore canvas
+		vec3.set(oldPos, viewport.pos);
 		ctx.restore();
 	}
 
@@ -294,13 +311,20 @@
 	}
 
 	Renderer.prototype._renderPowerup = function(ctx, powerup) {
-		var ctx = this.ctx;
+		var ctx = this.ctx,
+			size = powerup.radius,
+			name = powerup.subtype;
 
 		ctx.fillStyle = powerup.subtype === 'shield' ? 'cyan' : 'green';
 		ctx.beginPath();
-		ctx.arc(0, 0, powerup.radius, 0, 2 * Math.PI, true);
+		ctx.fillRect(-size, -size, size, size);
 		ctx.closePath();
-		ctx.fill();
+
+		// Render the powerup name
+		ctx.font = '8pt monospace';
+		ctx.fillStyle = 'white';
+		ctx.textAlign = 'center';
+		ctx.fillText(name, 0, -size - 2);
 	}
 
 	Renderer.prototype._renderBullet = function(ctx, bullet) {

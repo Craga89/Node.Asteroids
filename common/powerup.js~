@@ -48,7 +48,7 @@
 		this.pos = vec3.create(params.pos);
 
 		this.power = 30;
-		this.radius = 5;
+		this.radius = 8;
 	}
 
 	// Merge properties
@@ -62,9 +62,9 @@
 	// Activates the power up on a particular player
 	Shield.prototype.activate = function(player) {
 		// Increase players shield (not above 100)
-		player.setShield(
-			Math.min(player.shield + this.power, 100)
-		);
+		if(player.shield + this.power <= 100) {
+			player.adjustShield(this.power);
+		};
 
 		// Call super-class method
 		this._super.activate.apply(this, arguments);
@@ -85,7 +85,7 @@
 		this.pos = vec3.create(params.pos);
 
 		this.increase = 30;
-		this.radius = 7;
+		this.radius = 12;
 	}
 
 	// Merge properties

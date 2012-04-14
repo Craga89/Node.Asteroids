@@ -19,8 +19,8 @@
 		var game = this;
 
 		/* Constants */
-		this.WIDTH = 3000;
-		this.HEIGHT = 3000;
+		this.WIDTH = 2500;
+		this.HEIGHT = 2500;
 		this.STATES = 300;
 		this.TICK_RATE = Math.round(1000 / 30);
 		this.CMD_RATE = Math.round(1000 / 30);

@@ -48,7 +48,7 @@
 		this.pos = vec3.create(params.pos);
 
 		this.power = 30;
-		this.radius = 5;
+		this.radius = 8;
 	}
 
 	// Merge properties
@@ -85,7 +85,7 @@
 		this.pos = vec3.create(params.pos);
 
 		this.increase = 30;
-		this.radius = 7;
+		this.radius = 13;
 	}
 
 	// Merge properties

@@ -19,8 +19,8 @@
 		var game = this;
 
 		/* Constants */
-		this.WIDTH = 3000;
-		this.HEIGHT = 3000;
+		this.WIDTH = 400;
+		this.HEIGHT = 1000;
 		this.STATES = 300;
 		this.TICK_RATE = Math.round(1000 / 30);
 		this.CMD_RATE = Math.round(1000 / 30);
@@ -193,8 +193,8 @@
 
 			// Loop entitys round the world
 			if( (outside = entity.outsideWorld(this.WIDTH, this.HEIGHT)) ) {
-				if(outside[0] !== 0) { entity.pos[0] = outside[0] < 0 ? this.WIDTH : 0 }
-				if(outside[1] !== 0) { entity.pos[1] = outside[1] < 0 ? this.HEIGHT : 0 }
+				if(outside[0] !== 0) { entity.pos[0] += (outside[0] < 0 ? 1 : -1) * this.WIDTH }
+				if(outside[1] !== 0) { entity.pos[1] += (outside[1] < 0 ? 1 : -1) * this.HEIGHT }
 			}
 
 			// Check for collisions with other objects
