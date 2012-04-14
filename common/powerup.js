@@ -6,21 +6,20 @@
 	 *
 	 * Represents a power up in the game
 	 */
-	function Powerup() {
-		this.type = 'powerup';
-		this.deltaScope = 'entities';
-		this.remove = false;
-
-		this.sent = false;
+	function Powerup(subclass) {
+		// Merge Powerup defaults with subclasses
+		Entity._merge(Powerup, subclass.defaults, Powerup.defaults);
 	};
 
+	// Defaults
+	Powerup.defaults = {
+		type: 'powerup'
+	}
+
 	// Inherit from Entity
-	Powerup.prototype = new Entity();
+	Powerup.prototype = new Entity(Powerup);
 	Powerup.prototype._super = Entity.prototype;
 	Powerup.prototype.constructor = Powerup;
-
-	// Merge properties
-	Powerup._mergeProps = ['id', 'pos', 'type', 'subtype', 'powerup', 'radius', 'remove'];
 
 	// Simply inform the server of this position
 	Powerup.prototype.computeState = function(delta) {
@@ -40,22 +39,21 @@
 	 * Regenerates your shield by a given amount
 	 */
 	function Shield(params, game) {
-		// Internals
 		this._game = game;
 
-		this.id = params.id;
-		this.subtype = 'shield';
-		this.pos = vec3.create(params.pos);
-
-		this.power = 30;
-		this.radius = 8;
+		// Set our parameters
+		this.setup(params);
 	}
 
-	// Merge properties
-	Shield._mergeProps = Powerup._mergeProps.concat([ 'power' ]);
+	// Shield defaults
+	Shield.defaults = {
+		subtype: 'shield',
+		power: 30,
+		radius: 8
+	};
 
 	// Inherit from Entity
-	Shield.prototype = new Powerup();
+	Shield.prototype = new Powerup(Shield);
 	Shield.prototype._super = Powerup.prototype;
 	Shield.prototype.constructor = Shield;
 
@@ -77,22 +75,21 @@
 	 * Increases your maximum shield power temporarily
 	 */
 	function ShieldUp(params, game) {
-		// Internals
 		this._game = game;
 
-		this.id = params.id;
-		this.subtype = 'shieldup';
-		this.pos = vec3.create(params.pos);
-
-		this.increase = 30;
-		this.radius = 13;
+		// Set our parameters
+		this.setup(params);
 	}
 
-	// Merge properties
-	ShieldUp._mergeProps = Powerup._mergeProps.concat([ 'increase' ]);
+	// Defaults
+	ShieldUp.defaults = {
+		subtype: 'shieldup',
+		increase: 30,
+		radius: 13
+	};
 
 	// Inherit from Entity
-	ShieldUp.prototype = new Powerup();
+	ShieldUp.prototype = new Powerup(ShieldUp);
 	ShieldUp.prototype._super = Powerup.prototype;
 	ShieldUp.prototype.constructor = ShieldUp;
 

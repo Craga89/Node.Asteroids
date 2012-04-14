@@ -10,35 +10,25 @@
 	 * Represents an asteroid in the game
 	 */
 	function Asteroid(params, game) {
-		// Internal properties
 		this._game = game;
 
-		// Main properties
-		this.id = params.id;
-		this.type = 'object';
-		this.subtype = 'asteroid';
+		// Set our parameters
+		this.set(params);
+	};
 
-		// Vectors
-		this.pos = vec3.create(params.pos);
-		this.lastPos = vec3.create(params.lastPos || params.pos);
-		this.velocity = vec3.create(params.velocity);
+	// Defaults
+	Asteroid.defaults = {
+		type: 'object',
+		subtype: 'asteroid',
 
-		// Angle properties
-		this.angularVel = params.angularVelocity || (Math.PI / 8);
-		this.angle = params.angle || 0;
-
-		// Set properties
-		this.radius = params.radius || 18;
-		this.health = this.radius * 10;
+		angularVel: Math.PI / 8,
+		health: 100
 	};
 
 	// Inherit from Entity
-	Asteroid.prototype = new Entity();
+	Asteroid.prototype = new Entity(Asteroid);
 	Asteroid.prototype._super = Entity.prototype;
 	Asteroid.prototype.constructor = Asteroid;
-
-	// Merge properties
-	Asteroid._mergeProps = Entity._mergeProps.concat([ 'angle', 'angularVelocity', 'health' ]);
 
 	Asteroid.prototype.computeState = function(delta) {
 		var pos = this.pos,
@@ -78,6 +68,9 @@
 		// Adjust shield strength of player if it was one
 		if(entity.type === 'player') {
 			entity.adjustShield( -((1 - Math.abs(bci)) * 15) );
+		}
+		else if(entity.subtype === 'asteroid') {
+			entity.adjustHealth( -((1 - Math.abs(bci)) * 15) );
 		}
 
 		// Adjust asteroid health

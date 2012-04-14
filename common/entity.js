@@ -5,10 +5,79 @@
 	/**
 	 * Entity class - Represents an object within the game
 	 */
-	function Entity() {
-		this.deltaScope = 'entities';
-		this.remove = false;
+	function Entity(subclass) {
+		// Merge Entity defaults with subclasses
+		Entity._merge(Entity, subclass.defaults, Entity.defaults, subclass.defaults);
 	};
+
+	/**
+	 * World entity defaults
+	 */
+	Entity.defaults = {
+		'id': 'Unknown',
+		'type': 'entity',
+		'subtype': 'unknown',
+		'deltaScope': 'entities',
+ 
+		'pos': [ 0, 0, 0],
+		'lastPos': [ 0, 0, 0 ],
+		'velocity': [ 0, 0, 0 ],
+		'acceleration': [ 1, 1, 0 ],
+ 
+		'angle': 0,
+		'angularVel': 0,
+ 
+		'mass': 10,
+		'radius': 5,
+ 
+		'remove': false
+	};
+
+	/**
+	 * Merges two Entitys of the same constructor together.
+	 *
+	 */
+	Entity._merge = function(cons, dest, obj, obj2) {
+		var func = cons._mergeFunc, props, p, i;
+
+		// Create the merge function if one isn't already defined
+		if(!func) {
+			func = '';
+
+			// Merge the properties
+			if((props = cons.defaults)) {
+				for(p in props) {
+					func += 'if(obj3 && typeof obj3.'+p+' !== "undefined") { obj.'+p+' = obj3.'+p+'; } ' +
+						'else if(obj2 && typeof obj2.'+p+' !== "undefined") { obj.'+p+' = obj2.'+p+'; } ';
+				}
+			}
+
+			// Create and set the new function
+			func = cons._mergeFunc = new Function('obj', 'obj2', 'obj3', func);
+		}
+
+		// Run the merge function and return this object
+		return func(dest, obj, obj2), dest;
+	};
+
+	/**
+	 * Sets up the entity with the pass parameters
+	 * and entity default values
+	 */
+	Entity.prototype.setup = function(params) {
+		var cons = this.constructor;
+		return Entity._merge(cons, this, cons.defaults, params);
+	}
+	
+	/**
+	 * Sets entity parameters to passed values
+	 *
+	 * This only effects the Entity defaults for the
+	 * particular subclass (Player, Bullet etc)
+	 */
+	Entity.prototype.set = function(params) {
+		return Entity._merge(this.constructor, this,  params);
+	}
 
 	/**
 	 * This must be overriden
@@ -16,55 +85,17 @@
 	Entity.prototype.computeState = function(delta) {};
 
 	/**
-	 * Determines which properties get merged when calling
-	 * the .merge() method below.
+	 * Merges properties from a delta entity
 	 */
-	Entity._mergeProps = ['id', 'type', 'subtype', 'pos', 'lastPos', 'velocity', 'acceleration', 'radius', 'remove'];
-
-	/**
-	 * Merges two Entitys of the same constructor together.
-	 * 
-	 * Only properties defined in the constructors _mergeProps
-	 * array are copied over, due to the "caching" nature of this
-	 * function.
-	 */
-	Entity.prototype.merge = function(entity) {
-		var cons = this.constructor,
-			entityCons = entity.constructor,
-			copy = entityCons === Object,
-			func = cons._mergeFunc,
-			props, p, i;
-
-		// Ensure both objects have the same constructor
-		if(!(this instanceof cons)) { return false; }
-
-		// Create the merge function if one isn't already defined
-		if(!func) {
-			func = '';
-
-			// Merge the properties
-			if((props = cons._mergeProps || entityCons._mergeProps) && (i = props.length)) {
-				while((p = props[--i])) {
-					func += 'if(typeof obj2.'+p+' !== "undefined") { ' +
-						'obj.'+p+' = obj2.'+p+';' +
-						//'callbacks.'+p+' && callbacks.'+p+'(obj, "'+p+'", obj2.'+p+');' +
-					"}\n";
-				}
-			}
-
-			// Create and set the new function
-			func = cons._mergeFunc = new Function('obj', 'obj2', func);
-		}
-
-		// Run the merge function and return this object
-		return func(this, entity), this;
+	Entity.prototype.mergeDelta = function(delta) {
+		return Entity._merge(this.constructor, this, delta);
 	}
 
 	/**
-	 * Copies the to a new JSON Object
+	 * Copies this Entity to a new JSON Object
 	 */
 	Entity.prototype.toJSON = function() {
-		return Entity.prototype.merge.call({}, this);
+		return Entity._merge(this.constructor, {}, this);
 	};
 
 	/**

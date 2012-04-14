@@ -13,61 +13,42 @@
 	 * Represent an object within the game
 	 */
 	function Player(params, game) {
-		var player = this;
-
-		// Internal properties
 		this._game = game;
 
-		// Main properties
-		this.id = params.id;
-		this.type = 'player';
-		this.subtype = params.subtype || 'player';
+		// Set our parameters
+		this.set(params);
+	}
 
-		// Vectors
-		this.pos = vec3.create(params.pos);
-		this.lastPos = vec3.create(params.lastPos || params.pos);
-		this.velocity = vec3.create(params.velocity);
-		this.acceleration = vec3.create(params.acceleration || [0.99, 0.99, 0 ]);
-		this.thrust = params.thrust || 0;
+	// Defaults
+	Player.defaults = {
+		'type': 'player',
+		'subtype': 'player',
+ 
+		'acceleration': [0.99, 0.99, 0 ],
+		'thrust': 0,
+		'rotateBy': 0,
+		'angularVel': Math.PI / 8,
+		
+		'shield': 100,
+		'shieldMax': 100,
+		'shieldQuality': 0.5,
+		'shieldRegen': 0.065,
+		'shieldPause': 0,
+		
+		'weapon': 'Bullet',
+		'shooting': false,
+		'shootRate': 150,
 
-		// Angle properties
-		this.rotateBy = params.rotate || 0;
-		this.angularVel = (Math.PI / 8);
-		this.angle = params.angle || 0;
-
-		// Health and shield properties
-		this.shield = params.shield || 100;
-		this.shieldMax = params.shieldMax || 100;
-		this.shieldQuality = 0.5;
-		this.shieldRegen = 0.075;
-		this.shieldPause = params.shieldPause || 0;
-
-		// Weapon properties
-		this.weapon = 'Bullet';
-		this.shooting = params.shooting || false;
-		this.shootRate = 150;
-
-		// Bullet properties
-		this.bulletStrength = 30;
-		this.bulletRange = 200;
-
-		// Set properties
-		this.rebound = 0.96;
-		this.radius = 18;
+		'bulletStrength': 30,
+		'bulletRange': 200,
+		
+		'radius': 18
 	};
 
 	// Inherit from Entity
-	Player.prototype = new Entity();
+	Player.prototype = new Entity(Player);
 	Player.prototype._super = Entity.prototype;
 	Player.prototype.constructor = Player;
-
-	// Merge properties
-	Player._mergeProps = Entity._mergeProps.concat([
-		'thrust', 'rotateBy', 'angle',
-		'shield', 'shieldQuality', 'shieldRegen', 'rebound',
-		'shooting', 'shootRate', 'angularVel', 'bulletStrength',
-		'bulletRange', 'shieldPause', 'shieldMax'
-	]);
 
 	Player.prototype.computeState = function(delta) {
 		var id = this.id,
@@ -229,7 +210,6 @@
 		if(!isNaN(cmd.space)) {
 			if((this.shooting = cmd.space)) {
 				this._game.schedule(function() {
-					console.log('shooting!', player);
 					if(player.shooting) { player.shoot(); }
 					return !!player.shooting;
 				},

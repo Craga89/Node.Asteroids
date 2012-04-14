@@ -394,7 +394,7 @@
 			}
 
 			// Merge the delta state into our entity object
-			else { entity.merge(deltaEntity); }
+			else { entity.mergeDelta(deltaEntity); }
 		}
 
 		// Process events

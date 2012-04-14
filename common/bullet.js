@@ -10,33 +10,28 @@
 	 * Represent an object within the game
 	 */
 	function Bullet(params, game) {
-		// Internals
 		this._game = game;
 
-		this.id = params.id;
-		this.type = this.subtype = 'bullet';
-		this.owner = params.owner;
+		// Set our parameters
+		this.setup(params);
+	};
 
-		this.pos = vec3.create(params.pos);
-		this.lastPos = vec3.create(params.lastPos || params.pos);
-		this.velocity = vec3.create(params.velocity);
-		this.angle = params.angle;
+	// Defaults
+	Bullet.defaults = {
+		type: 'bullet',
+		subtype: 'bullet',
+		owner: 'Unknown',
 
-		this.duration = params.duration || 750;
-		this.lifespan = params.lifespan || 750;
-		this.strength = params.strength || 30;
-		this.radius = 2;
+		duration: 750,
+		lifespan: 750,
+		strength: 30,
+		radius: 2
 	};
 
 	// Inherit from Entity
-	Bullet.prototype = new Entity();
+	Bullet.prototype = new Entity(Bullet);
 	Bullet.prototype._super = Entity.prototype;
 	Bullet.prototype.constructor = Bullet;
-
-	// Setup merge properties
-	Bullet._mergeProps = Entity._mergeProps.concat([
-		'owner', 'radius', 'angle', 'strength', 'duration', 'lifespan'
-	]);
 
 	Bullet.prototype.computeState = function(delta) {
 		var game = this._game,

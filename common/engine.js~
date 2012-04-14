@@ -368,6 +368,8 @@
 		len = stateBuffer.push(delta);
 		if(len > (this.STATE_BUFFER_TIME / this.TICK_RATE)) { stateBuffer.shift(); }
 
+		console.log(delta)
+
 		// Process entity changes
 		for(i in deltaEntities) {
 			deltaEntity = deltaEntities[i];
@@ -394,13 +396,12 @@
 			}
 
 			// Merge the delta state into our entity object
-			else { entity.merge(deltaEntity); }
+			else { entity.mergeDelta(deltaEntity); }
 		}
 
 		// Process events
 		i = events.length;
 		while((event = events[--i])) {
-			console.log(event)
 			this.eventHandler.fire(event.shift(), event, this);
 		}
 	};
