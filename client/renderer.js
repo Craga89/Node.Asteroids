@@ -242,6 +242,11 @@
 			case 'player': this._renderPlayer(ctx, entity); break;
 			case 'bullet': this._renderBullet(ctx, entity); break;
 			case 'powerup': this._renderPowerup(ctx, entity); break;
+			case 'object':
+				switch(entity.subtype) {
+					case 'asteroid': this._renderAsteroid(ctx, entity); break;
+				}
+				break;
 		}
 
 		// Restore canvas context
@@ -264,8 +269,7 @@
 	};
 
 	Renderer.prototype._renderPlayer = function(ctx, player) {
-		var ctx = this.ctx,
-			isMe = game.me === player,
+		var isMe = game.me === player,
 			radius = player.radius,
 			r2 = radius / 2,
 			shield = (player.shield / 100);
@@ -307,11 +311,21 @@
 		ctx.font = '7pt monospace';
 		ctx.fillStyle = 'blue';
 		ctx.fillText(Math.floor(player.shield) + '%', 0, radius + r2 + ctx.lineWidth);
-	}
+	};
+
+	Renderer.prototype._renderAsteroid = function(ctx, asteroid) {
+		var size = asteroid.radius;
+
+		ctx.fillStyle = '#84561a';
+		//ctx.rotate(asteroid.angle);
+		ctx.beginPath();
+		ctx.arc(0, 0, size, 0, 2 * Math.PI, true);
+		ctx.closePath();
+		ctx.fill();
+	};
 
 	Renderer.prototype._renderPowerup = function(ctx, powerup) {
-		var ctx = this.ctx,
-			size = powerup.radius,
+		var size = powerup.radius,
 			name = powerup.subtype;
 
 		ctx.fillStyle = powerup.subtype === 'shield' ? 'cyan' : 'green';
@@ -327,8 +341,7 @@
 	}
 
 	Renderer.prototype._renderBullet = function(ctx, bullet) {
-		var ctx = this.ctx,
-			mine = bullet.owner === game.me.id,
+		var mine = bullet.owner === game.me.id,
 			range = Math.min(1, .5 + bullet.lifespan / bullet.duration);
 
 		ctx.fillStyle = mine ? 'green' : 'red';

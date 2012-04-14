@@ -25,6 +25,7 @@ html
 		script(src='/js/client/socket.io.js')
 		script(src='/js/client/eventhandler.js')
 		script(src='/js/client/soundmanager2-nodebug-jsmin.js')
+		script(src='/js/client/viewport.js')
 		script(src='/js/client/renderer.js')
 		script(src='/js/client/sprite.js')
 		script(src='/js/client/input.js')

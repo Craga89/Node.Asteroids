@@ -10,8 +10,14 @@ var handler = new EventHandler({
 
 	},
 
-	collision: function(player) {
-		soundManager.play('collision');
+	collision: function(id, id2) {
+		var entity = this.getEntityById(id),
+			entity2 = this.getEntityById(id2);
+
+		if(entity.subtype === 'player' ||
+			entity2.subtype === 'player') {
+			soundManager.play('collision');
+		}
 	},
 
 	powerup: function(player) {
@@ -48,7 +54,7 @@ var renderer = new Renderer({
 soundManager.url = '/js/client/swf';
 soundManager.flashVersion = 9;
 soundManager.useHTML5Audio = false;
-soundManager.useFlashBlock = true;
+soundManager.useFlashBlock = false;
 soundManager.useHighPerformance = true;
 soundManager.useFastPolling = true;
 soundManager.onready(function() {
@@ -130,6 +136,7 @@ socket.on('start', function(data) {
 
 	// Load initial game state
 	game.load(data.state, false);
+	console.log(data.state);
 
 	// Start game and renderer
 	//renderer.start();

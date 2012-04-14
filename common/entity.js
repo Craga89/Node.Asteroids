@@ -106,7 +106,8 @@
 	};
 
 	Entity.prototype.registerEvent = function() {
-		this._game.registerEvent( [].splice.call(arguments, 0) );
+		var args = [].splice.call(arguments, 0); args.splice(1, 0, this.id);
+		this._game.registerEvent(args);
 	}
 	
 	Entity.prototype.destroy = function() {

@@ -3,6 +3,7 @@
 		Timer = (CLIENT ? exports : require('./timer')).Timer,
 		Player = (CLIENT ? exports : require('./player')).Player,
 		Bullet = (CLIENT ? exports : require('./bullet')).Bullet,
+		Asteroid = (CLIENT ? exports : require('./asteroid')).Asteroid,
 		Powerups = (CLIENT ? exports.Powerups : require('./powerup'));
 
 	function random(min, max) {
@@ -60,6 +61,9 @@
 			'player': Player,
 			'bot': Player
 		},
+		'object': {
+			'asteroid': Asteroid
+		},
 		'bullet': {
 			'bullet': Bullet
 		},
@@ -70,7 +74,7 @@
 	};
 
 	Game.prototype._instantiate = function(entity) {
-		var (constr = Game.instanceMap[entity.type] || {})[entity.subtype];
+		var constr = (Game.instanceMap[entity.type] || {})[entity.subtype];
 
 		// Depending on type, instantiate.
 		return constr ? new constr(entity, this) : false;
@@ -209,12 +213,19 @@
 					// Handle different collision types
 					switch(entity.type+entity2.type) {
 						// Player collides with a bullet
-						case 'playerbullet': entity.handleHit(entity2); break;
-						case 'bulletplayer': entity2.handleHit(entity); break;
+						case 'playerbullet':
+ 						case 'objectbullet': entity.handleHit(entity2); break;
+						case 'bulletplayer':
+						case 'bulletobject': entity2.handleHit(entity); break;
 
 						// Player collides with a power up
 						case 'powerupplayer': entity.activate(entity2); break;
 						case 'playerpowerup': entity2.activate(entity); break;
+
+						// Player collides with an object
+						case 'playerobject': entity2.handleCollision(entity); break;
+						case 'objectplayer': entity.handleCollision(entity2); break;
+						case 'objectobject': entity.handleCollision(entity2); break;
 
 						// Player collides with another player
 						case 'playerplayer': entity.handleCollision(entity2); break;
@@ -263,6 +274,11 @@
 			pos: vec3.create([
 				random(0, this.WIDTH),
 				random(0, this.HEIGHT),
+				0
+			]),
+			velocity: vec3.create([
+				random(-2, 2) / 10,
+				random(-2, 2) / 10,
 				0
 			]),
 			angle: random(0, Math.PI / 2)
@@ -345,7 +361,6 @@
 			deltaEntities = delta.entities,
 			events = delta.events || [],
 			entity, deltaEntity,
-			callbacks = this.delta.callbacks,
 			stateBuffer = this.stateBuffer,
 			callback, i, e;
 
@@ -385,6 +400,7 @@
 		// Process events
 		i = events.length;
 		while((event = events[--i])) {
+			console.log(event)
 			this.eventHandler.fire(event.shift(), event, this);
 		}
 	};

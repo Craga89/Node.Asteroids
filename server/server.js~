@@ -24,7 +24,7 @@ game.onTick = function(){
 		state: game.deltaState
 	});
 
-	//console.log(game.deltaState)
+	console.log(game.deltaState)
 }
 
 // Initialise game loop

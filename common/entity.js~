@@ -81,13 +81,33 @@
 		return this.distanceTo(entity) < (this.radius + entity.radius);
 	};
 
+	/**
+	 * Determines if the Entity is outside the world parameters
+	 */
+	Entity.prototype.outsideWorld = function(width, height) {
+		var r = this.radius, adjust = r + r,
+			minX = this.pos[0] + adjust < r, maxX = this.pos[0] + r - adjust > width,
+			minY = this.pos[1] + adjust < r, maxY = this.pos[1] + r - adjust > height;
+
+		// If any of the conditions are true... return array
+		if(minX || maxX || minY || maxY) {
+			return [
+				minX ? -1 : maxX ? 1 : 0,
+				minY ? -1 : maxY ? 1 : 0
+			];
+		}
+
+		return false;
+	};
+
 	Entity.prototype.registerChange = function(prop, val) {
 		if(typeof val === 'undefined' && typeof prop === 'string') { val = this[prop]; }
 		this._game.registerChange(this.deltaScope, this.id, prop, val);
 	};
 
 	Entity.prototype.registerEvent = function() {
-		this._game.registerEvent( [].splice.call(arguments, 0) );
+		var args = [].splice.call(arguments, 0); args.splice(0, 1, this.id);
+		this._game.registerEvent(args);
 	}
 	
 	Entity.prototype.destroy = function() {

@@ -1,4 +1,6 @@
-var Powerups = require('../common/powerup');
+var Player = require('../common/player').Player,
+	Powerups = require('../common/powerup'),
+	Asteroid = require('../common/asteroid').Asteroid;
 
 function random(min, max) {
 	return (Math.random() * (max - min + 1)) + min;
@@ -30,6 +32,29 @@ Level.generate = function(game) {
 				game)
 			)
 		}
+	}
+
+	i = 20;
+	while(--i) {
+		id = 'asteroid_' + (game.lastID++);
+		state.entityMap[id] = -1 + state.entities.push(
+			new Asteroid({
+				id: id,
+				pos: [
+					random(0, game.WIDTH),
+					random(0, game.HEIGHT),
+					0
+				],
+				angularVelocity: random(0.2, Math.PI / 10),
+				radius: random(4, 25),
+				velocity: [
+					random(-2, 2) / 100,
+					random(-2, 2) / 100,
+					0
+				]
+			},
+			game)
+		)
 	}
 
 	return state;

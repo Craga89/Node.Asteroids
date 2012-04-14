@@ -10,8 +10,14 @@ var handler = new EventHandler({
 
 	},
 
-	collision: function(player) {
-		soundManager.play('collision');
+	collision: function(id, id2) {
+		var entity = this.getEntityById(id),
+			entity2 = this.getEntityById(id2);
+
+		if(entity.subtype === 'player' ||
+			entity2.subtype === 'player') {
+			soundManager.play('collision');
+		}
 	},
 
 	powerup: function(player) {
@@ -30,7 +36,7 @@ var handler = new EventHandler({
 		var entity = this.getEntityById(id);
 		
 		if(entity && entity.type === 'player') {
-			soundMananger.play('death');
+			soundManager.play('death');
 		}
 	}
 });
@@ -130,6 +136,7 @@ socket.on('start', function(data) {
 
 	// Load initial game state
 	game.load(data.state, false);
+	console.log(data.state);
 
 	// Start game and renderer
 	//renderer.start();
