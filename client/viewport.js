@@ -19,7 +19,7 @@
 		this.pos = vec3.set(this.worldCentre, vec3.create());
 	};
 
-	Viewport.prototype.withinCustomBounds = function(coords, bounds) {
+	Viewport.withinBounds = function(coords, bounds) {
 		return coords[0] > bounds[0] && coords[0] < bounds[1] &&
 			coords[1] > bounds[2] && coords[1] < bounds[3];
 	}
@@ -37,7 +37,7 @@
 
 		if(typeof padding === 'undefined') { padding = 50; }
 
-		return this.withinCustomBounds(coords, [
+		return Viewport.withinBounds(coords, [
 			(pos[0] - centre[0]) - padding, (pos[0] + centre[0]) + padding,
 			(pos[1] - centre[1]) - padding, (pos[1] + centre[1]) + padding
 		]);
@@ -52,10 +52,19 @@
 	 * @type Boolean
 	*/
 	Viewport.prototype.withinWorldBounds = function(coords) {
-		return this.withinCustomBounds(coords, [
+		return Viewport.withinBounds(coords, [
 			0, this.worldWidth, 0, this.worldHeight
 		]);
 	};
+
+	Viewport.prototype.bounds = function() {
+		var centre = this.centre, pos = this.pos;
+
+		return [
+			pos[0] - centre[0], pos[0] + centre[0] + padding,
+			pos[1] - centre[1], pos[1] + centre[1] + padding
+		];
+	}
 
 	/**
 	 * Convert world coordinates to screen coordinates
@@ -81,10 +90,10 @@
 	 * @type Number
 	*/
 	Viewport.prototype.worldXToScreenX = function(x) {
-		return ((this.pos[0] - this.width / 2) - x) * -1;
+		return ((this.pos[0] - this.centre[0]) - x) * -1;
 	};
 	Viewport.prototype.worldYToScreenY = function(y) {
-		return ((this.pos[1] - this.height / 2) - y) * -1;
+		return ((this.pos[1] - this.centre[1]) - y) * -1;
 	};
 
 	
@@ -103,7 +112,7 @@
 			this.worldYToScreenY(this.worldHeight) : this.height;
 
 		ctx.save();
-		ctx.strokeStyle = "rgb(200, 200, 200)";
+		ctx.strokeStyle = 'rgb(0, 100, 255)';
 		ctx.lineWidth = 3;
 		ctx.strokeRect(
 			pos[0] - ctx.lineWidth,

@@ -191,10 +191,10 @@
 			// Compute new state and register it
 			entity.computeState(delta);
 
-			// Loop players round the world
+			// Loop entitys round the world
 			if( (outside = entity.outsideWorld(this.WIDTH, this.HEIGHT)) ) {
-				if(outside[0] !== 0) { entity.pos[0] = outside[0] < 0 ? this.WIDTH : 0 }
-				if(outside[1] !== 0) { entity.pos[1] = outside[1] < 0 ? this.HEIGHT : 0 }
+				if(outside[0] !== 0) { entity.pos[0] += (outside[0] < 0 ? 1 : -1) * this.WIDTH }
+				if(outside[1] !== 0) { entity.pos[1] += (outside[1] < 0 ? 1 : -1) * this.HEIGHT }
 			}
 
 			// Check for collisions with other objects

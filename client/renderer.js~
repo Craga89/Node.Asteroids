@@ -83,36 +83,93 @@
 		return canvas;
 	};
 
-	Renderer.prototype.render = function() {
-		var ctx = this.ctx,
+	Renderer.prototype.render = function(coords) {
+		// Only proceed if we can grab a reference to our player
+		if(!this.game.me) { return; }
+
+		var self = this,
+			ctx = this.ctx,
+			game = this.game,
 			canvas = this.canvas,
-			entities = this.game.state.entities,
-			entity, i;
+			entities = game.state.entities,
+			entity, i, t;
 
 		// Clear the canvas and use black background
 		ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
 		ctx.fillStyle = 'rgb(20,20,20)';
 		ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-		// Draw the viewport boundaries
-		this.viewport.drawBounds(ctx);
+		// If we aren't rendering a specific canvas area...
+		if(typeof coords === 'undefined') {
+			vec3.set(this.game.me.pos, this.viewport.pos);
+
+			// Clear the canvas and use black background
+			ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+			ctx.fillStyle = 'rgb(20,20,20)';
+			ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+			// Render adjacent world tiles if needed
+			this._drawTiles(ctx);
+		}
+
+		// Set viewport position if coordinates were passed...
+		else { vec3.set(coords, this.viewport.pos); }
 
 		// Draw the stars
 		this._drawStars(ctx);
-
-		// Set viewport position
-		if(this.game.me) {
-			vec3.set(this.game.me.pos, this.viewport.pos);
-		}
 
 		// Render all objects
 		for(i in entities) {
 			// Check to make sure the entity isn't removed
 			if((entity = entities[i]).remove) { continue };
 
+			// Render the entity
 			this.renderEntity(ctx, entity);
 		}
+
+		// Draw the viewport boundaries
+		if(typeof coords === 'undefined' && this.drawBoundary) {
+			this.viewport.drawBounds(ctx);
+		}
 	};
+
+	Renderer.prototype._drawTiles = function(ctx) {
+		var game = this.game,
+			viewport = this.viewport, mePos = game.me.pos,
+			vPos = viewport.pos, vCentre = viewport.centre,
+			vWidth = viewport.width, vHeight = viewport.height,
+			gWidth = game.WIDTH, gHeight = game.HEIGHT;
+
+		// Determine transform coords
+		t = [
+			vCentre[0] - (gWidth - vPos[0]),
+			gWidth - vCentre[0] - (gWidth - vPos[0]),
+			vCentre[1] - (gHeight - vPos[1]),
+			gHeight - vCentre[1] - (gHeight - vPos[1]),
+		]
+
+		// Draw parallel tiles
+		if(t[1] < 0) { this._drawTile(ctx, -t[1] - vWidth, 0, [ gWidth - vCentre[0], mePos[1] ]); } // Left
+		else if(t[0] > 0) { this._drawTile(ctx, vWidth - t[0], 0, [ vCentre[0], mePos[1] ]); } // Right
+		if(t[3] < 0) { this._drawTile(ctx, 0, -t[3] - vHeight, [ mePos[0], gHeight - vCentre[1] ]); } // Top
+		else if(t[2] > 0) { this._drawTile(ctx, 0, vHeight - t[2], [ mePos[0], vCentre[1] ]); } // Bottom
+
+		// Draw diagonal tiles
+		if(t[1] < 0 && t[3] < 0) { this._drawTile(ctx, -t[1] - vWidth, -t[3] - vHeight, [ gWidth - vCentre[0], gHeight - vCentre[1] ]); } // Top left
+		else if(t[0] > 0 && t[3] < 0) { this._drawTile(ctx, vWidth - t[0], -t[3] - vHeight, [ vCentre[0], gHeight - vCentre[1] ]); } // Top right
+		else if(t[1] < 0 && t[2] > 0) { this._drawTile(ctx, -t[1] - vWidth, vHeight - t[2], [ gWidth - vCentre[0], vCentre[1] ]); } // Bottom left
+		else if(t[0] > 0 && t[2] > 0) { this._drawTile(ctx, vWidth - t[0], vHeight - t[2], vCentre); } // Bottom right
+
+		// Reset viewport coordinates
+		vec3.set(mePos, vPos);
+	}
+
+	Renderer.prototype._drawTile = function(ctx, x, y, coords) {
+		ctx.save();
+		ctx.translate(Math.round(x), Math.round(y));
+		this.render(coords);
+		ctx.restore();
+	}
 
 	Renderer.prototype._drawStars = function(ctx) {
 		var cache = this.cache,
@@ -137,7 +194,7 @@
 			coords;
 
 		// Don't render stuff outside the viewport
-		if(!viewport.withinCustomBounds(pos, bounds, entity.radius)) { return; }
+		if(!viewport.withinBounds(pos, bounds, entity.radius)) { return; }
 
 		// Calculate local coords
 		coords = viewport.worldToScreen(pos);
