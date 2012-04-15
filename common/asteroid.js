@@ -14,6 +14,9 @@
 
 		// Set our parameters
 		this.setup(params);
+
+		// It's mass should be a function of it's radius
+		this.mass = this.radius * 5;
 	};
 
 	// Defaults
@@ -44,48 +47,6 @@
 		// Calculate new position based on velocity
 		vec3.add(pos, [ vel[0] * delta, vel[1] * delta, 0 ]);
 		this.registerChange('pos');
-	};
-
-
-	Asteroid.prototype.handleCollision = function(entity) {
-		var collision, distance, aci, bci;
-
-		/*
-		 * Calculate difference vector based on each entities position.
-		 * Scale the result by the combined radius of each object
-		 */
-		collision = vec3.subtract(this.pos, entity.pos, vec3.create());
-		distance = vec3.length(collision);
-
-		// Make sure the distance is within bounds and normalize collision vector
-		if(distance === 0) { collision = vec3.create([ 1, 1, 0 ]); }
-		vec3.normalize(collision);
-
-		// Calculate impulses via dot product
-		aci = vec3.dot(this.velocity, collision);
-		bci = vec3.dot(entity.velocity, collision);
-
-		// Adjust shield strength of player if it was one
-		if(entity.type === 'player') {
-			entity.adjustShield( -((1 - Math.abs(bci)) * 15) );
-		}
-		else if(entity.subtype === 'asteroid') {
-			entity.adjustHealth( -((1 - Math.abs(bci)) * 15) );
-		}
-
-		// Adjust asteroid health
-		this.adjustHealth( -((1 - Math.abs(aci)) * 15) );
-
-		// Scale velocity using impulse/forces above
-		vec3.scale(collision, bci - aci, this.velocity);
-		vec3.scale(collision, aci - bci, entity.velocity);
-
-		// Register velocity changes
-		this.registerChange('velocity');
-		entity.registerChange('velocity');
-
-		// Register event
-		this.registerEvent('collision', entity.id);
 	};
 
 	Asteroid.prototype.setHealth = function(val) {

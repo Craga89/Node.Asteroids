@@ -222,13 +222,8 @@
 						case 'powerupplayer': entity.activate(entity2); break;
 						case 'playerpowerup': entity2.activate(entity); break;
 
-						// Player collides with an object
-						case 'playerobject': entity2.handleCollision(entity); break;
-						case 'objectplayer': entity.handleCollision(entity2); break;
-						case 'objectobject': entity.handleCollision(entity2); break;
-
-						// Player collides with another player
-						case 'playerplayer': entity.handleCollision(entity2); break;
+						// All other collisions
+						default: this._handleCollisionElastic(entity, entity2); break;
 					}
 				}
 			}
@@ -242,6 +237,55 @@
 		this.state.entityMap = newMap;
 		this.scheduleBuffer = ongoingSchedules;
 	};
+
+	Game.prototype._handleCollisionElastic = function(entity1, entity2) {
+		var m1 = entity1.mass, m2 = entity2.mass, ms = m1 + m2,
+			v1 = entity1.velocity, v2 = entity2.velocity,
+			normal, distance, tangent, v1n, v1t, v2n, v2t, vd1n, vd2n, adjust1, adjusted2;
+
+		/*
+		 * Calculate our uni normal vector, which is the difference between the two
+		 * center positions of our circles (entity radius'), divided by its magnitude.
+		 */
+		normal = vec3.subtract(entity1.pos, entity2.pos, vec3.create());
+		vec3.normalize(normal);
+
+		// Using the unit normal vector above, calculate the unit tangent vector
+		tangent = vec3.create([ -normal[1], normal[0], 0 ]);
+
+		// Resolve velocity vectors into unit normal/tangent scalars via dot products
+		v1n = vec3.dot(normal, v1); v1t = vec3.dot(tangent, v1);
+		v2n = vec3.dot(normal, v2); v2t = vec3.dot(tangent, v2);
+
+		// Calculate the new normal velocities using the 1-dimensional elastic body equations
+		vd1n = (v1n*(m1 - m2) + 2*(m2 * v2n)) / ms; vd2n = (v2n*(m2 - m1) + 2*(m1 * v1n)) / ms;
+
+		/*
+		 * Final velocities are then calculated by adding together one unit vector
+		 * scaled by the uni normal and one by the unit tangent
+		 */
+		vec3.add( vec3.scale(normal, vd1n, []), vec3.scale(tangent, v1t, []), v1);
+		vec3.add( vec3.scale(normal, vd2n, []), vec3.scale(tangent, v2t, []), v2);
+
+		console.log(entity1.id, entity2.id, m2 / m1);
+
+		
+		/*
+		// Adjust entity shield strengths if possible
+		adjusted1 = entity1.adjustShield && entity1.adjustShield( -((1 - Math.abs(bci)) * 15) );
+		adjusted2 = entity2.adjustShield && entity2.adjustShield( -((1 - Math.abs(aci)) * 15) );
+
+		// Adjust entity health if possible (and we haven't adjusted anything else)
+		entity1.adjustHealth && !adjusted1 && entity1.adjustHealth( -((1 - Math.abs(bci)) * 15) );
+		entity2.adjustHealth && !adjusted2 && entity2.adjustHealth( -((1 - Math.abs(aci)) * 15) );
+*/
+		// Register velocity changes
+		entity1.registerChange('velocity');
+		entity2.registerChange('velocity');
+
+		// Register event
+		entity1.registerEvent('collision', entity2.id);
+	}
 
 	Game.prototype._addPlayer = function(data) {
 		var entities = this.state.entities, player;
@@ -367,8 +411,6 @@
 		// Push the delta state onto the buffer
 		len = stateBuffer.push(delta);
 		if(len > (this.STATE_BUFFER_TIME / this.TICK_RATE)) { stateBuffer.shift(); }
-
-		console.log(delta)
 
 		// Process entity changes
 		for(i in deltaEntities) {
