@@ -13,7 +13,7 @@
 		this._game = game;
 
 		// Set our parameters
-		this.set(params);
+		this.setup(params);
 	};
 
 	// Defaults
@@ -25,6 +25,8 @@
 		duration: 750,
 		lifespan: 750,
 		strength: 30,
+
+		mass: 620,
 		radius: 2
 	};
 

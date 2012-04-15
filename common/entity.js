@@ -23,6 +23,7 @@
 		'lastPos': [ 0, 0, 0 ],
 		'velocity': [ 0, 0, 0 ],
 		'acceleration': [ 1, 1, 0 ],
+		'collidable': true, // Setting this to false is lulz
  
 		'angle': 0,
 		'angularVel': 0,
@@ -47,8 +48,10 @@
 			// Merge the properties
 			if((props = cons.defaults)) {
 				for(p in props) {
-					func += 'if(obj3 && typeof obj3.'+p+' !== "undefined") { obj.'+p+' = obj3.'+p+'; } ' +
-						'else if(obj2 && typeof obj2.'+p+' !== "undefined") { obj.'+p+' = obj2.'+p+'; } ';
+					func += 'val = obj3 && typeof obj3.'+p+' !== "undefined" ? obj3.'+p+' : obj2.'+p+';' +
+						'if(typeof val !== "undefined") {' +
+							'obj.'+p+' = val.splice || val.buffer ? [ val[0], val[1], val[2] ] : val;' +
+						'} ';
 				}
 			}
 
@@ -85,6 +88,26 @@
 	Entity.prototype.computeState = function(delta) {};
 
 	/**
+	 * Collision handler... override this ideally
+	 */
+	Entity.prototype.handleCollision = function(entity) {
+		// Pawn off the collision to the other entity if it has a handler
+		if(entity.handleCollision !== this.handleCollision) {
+			entity.handleCollision(this);
+		}
+	};
+
+	/**
+	 * Collision handler... override this ideally
+	 */
+	Entity.prototype.handleHit = function(entity) {
+		// Pawn off the collision to the other entity if it has a handler
+		if(entity.handleHit !== this.handleHit) {
+			entity.handleHit(this);
+		}
+	};
+
+	/**
 	 * Merges properties from a delta entity
 	 */
 	Entity.prototype.mergeDelta = function(delta) {
@@ -109,7 +132,15 @@
 	 * Determines if this Entity intersects with the passed Entity
 	 */
 	Entity.prototype.intersects = function(entity) {
-		return this.distanceTo(entity) < (this.radius + entity.radius);
+		return this.distanceTo(entity) < (this.radius + entity.radius) + 0.01;
+	};
+
+	/*
+	 * Determines if two balls are going to intersect at current speed/angle
+	 */
+	Entity.prototype.willIntersect = function(entity) {
+		var p1 = this.pos, p2 = entity.pos, v1 = this.velocity, v2 = entity.velocity;
+		return (p2[0] - p1[0]) * (v1[0] - v2[0]) + (p2[1] - p1[1]) * (v1[1] - v2[1]) > 0;
 	};
 
 	/**

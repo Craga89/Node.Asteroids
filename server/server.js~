@@ -24,14 +24,14 @@ game.onTick = function(){
 		state: game.deltaState
 	});
 
-	console.log(game.deltaState)
+	//console.log(game.deltaState)
 }
 
 // Initialise game loop
 game.start();
 
 // Add some random players
-var count = 0;
+var count = 10;
 game.schedule(function() {
 	if(count < 6) {
 		var t = this.addBot('Bot'+(Math.floor(Math.random() * 100) / 100));

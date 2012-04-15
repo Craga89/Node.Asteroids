@@ -7,13 +7,14 @@
 	 * Represents a power up in the game
 	 */
 	function Powerup(subclass) {
-		// Merge Powerup defaults with subclasses
-		Entity._merge(Powerup, subclass.defaults, Powerup.defaults);
+		// Merge Entity defaults with subclasses
+		Entity._merge(Powerup, subclass.defaults, Powerup.defaults, subclass.defaults);
 	};
 
 	// Defaults
 	Powerup.defaults = {
-		type: 'powerup'
+		type: 'powerup',
+		mass: 0
 	}
 
 	// Inherit from Entity

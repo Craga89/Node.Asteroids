@@ -246,6 +246,7 @@
 				switch(entity.subtype) {
 					case 'asteroid': this._renderAsteroid(ctx, entity); break;
 				}
+				break;
 		}
 
 		// Restore canvas context

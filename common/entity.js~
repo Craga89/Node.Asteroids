@@ -23,6 +23,7 @@
 		'lastPos': [ 0, 0, 0 ],
 		'velocity': [ 0, 0, 0 ],
 		'acceleration': [ 1, 1, 0 ],
+		'collidable': true, // Setting this to false is lulz
  
 		'angle': 0,
 		'angularVel': 0,
@@ -47,8 +48,10 @@
 			// Merge the properties
 			if((props = cons.defaults)) {
 				for(p in props) {
-					func += 'if(obj3 && typeof obj3.'+p+' !== "undefined") { obj.'+p+' = obj3.'+p+'; } ' +
-						'else if(obj2 && typeof obj2.'+p+' !== "undefined") { obj.'+p+' = obj2.'+p+'; } ';
+					func += 'val = obj3 && typeof obj3.'+p+' !== "undefined" ? obj3.'+p+' : obj2.'+p+';' +
+						'if(typeof val !== "undefined") {' +
+							'obj.'+p+' = val.splice || val.buffer ? [ val[0], val[1], val[2] ] : val;' +
+						'} ';
 				}
 			}
 
@@ -85,6 +88,26 @@
 	Entity.prototype.computeState = function(delta) {};
 
 	/**
+	 * Collision handler... override this ideally
+	 */
+	Entity.prototype.handleCollision = function(entity) {
+		// Pawn off the collision to the other entity if it has a handler
+		if(entity.handleCollision !== this.handleCollision) {
+			entity.handleCollision(this);
+		}
+	};
+
+	/**
+	 * Collision handler... override this ideally
+	 */
+	Entity.prototype.handleHit = function(entity) {
+		// Pawn off the collision to the other entity if it has a handler
+		if(entity.handleHit !== this.handleHit) {
+			entity.handleHit(this);
+		}
+	};
+
+	/**
 	 * Merges properties from a delta entity
 	 */
 	Entity.prototype.mergeDelta = function(delta) {
@@ -109,14 +132,26 @@
 	 * Determines if this Entity intersects with the passed Entity
 	 */
 	Entity.prototype.intersects = function(entity) {
-		return this.distanceTo(entity) < (this.radius + entity.radius);
+		return this.distanceTo(entity) < (this.radius + entity.radius) + 0.01;
+	};
+
+	/*
+	 * Determines if two balls are going to intersect at current speed/angle
+	 */
+	Entity.prototype.willIntersect = function(entity) {
+		var t = entity.type+this.type;
+		if(t === 'playerpowerup' || t === 'powerupplayer'){
+			var asdf = entity.type === 'player' ? this : entity;
+			console.log(asdf.id, asdf.constructor, asdf.velocity[0], asdf.velocity[1])
+		}
+		return true;
 	};
 
 	/**
 	 * Determines if the Entity is outside the world parameters
 	 */
 	Entity.prototype.outsideWorld = function(width, height) {
-		var r = this.radius, adjust = r + r,
+		var r = this.radius, adjust = 0,
 			minX = this.pos[0] + adjust < r, maxX = this.pos[0] + r - adjust > width,
 			minY = this.pos[1] + adjust < r, maxY = this.pos[1] + r - adjust > height;
 

@@ -192,6 +192,45 @@
 			// Remove entity if needed
 			if(entity.remove) { continue;}
 
+			// Check for collisions with other objects
+			for(j = i + 1; j < entityCount; j++) {
+				if(!(entity2 = entities[j]) || entity2.remove) { continue; }
+				collisionType = entity.type + entity2.type;
+
+				/*
+				 * Check intersection of the two objects if:
+				 * 	1. The objects are collidable (per-entity setting)
+				 * 	2. The owner of one object is not the other
+				 * 	3. The entity will intersect on its current trajectory and...
+				 * 	4. If the above is true, they are actually colliding
+				 */
+				if(entity.collidable && entity2.collidable && entity.owner !== entity2.id &&
+					entity2.owner !== entity.id && collisionType !== 'bulletbullet' &&
+					entity.willIntersect(entity2) && entity.intersects(entity2)) {
+
+					// Handle different collision types
+					handled = false;
+					switch(entity.type+entity2.type) {
+						// Player collides with a bullet
+						case 'bulletplayer': case 'bulletobject':
+						case 'playerbullet': case 'objectbullet':
+							entity.handleHit(entity2);
+							break;
+
+						// Player collides with a power up
+						case 'powerupplayer':
+						case 'playerpowerup':
+							entity2.activate && entity2.activate(entity);
+							entity.activate && entity.activate(entity2);
+							handled = true;
+							break;
+					}
+
+					// If the collision wasn't handled... collide!
+					if(!handled) { this._handleCollision(entity, entity2); }
+				}
+			}
+
 			// Compute new state and register it
 			entity.computeState(delta);
 
@@ -201,32 +240,6 @@
 				if(outside[1] !== 0) { entity.pos[1] += (outside[1] < 0 ? 1 : -1) * this.HEIGHT }
 			}
 
-			// Check for collisions with other objects
-			for(j = i + 1; j < entityCount; j++) {
-				if(!(entity2 = entities[j]) || entity2.remove) { continue; }
-				collisionType = entity.type + entity2.type;
-
-				// Check intersection of the two objects
-				if(entity.owner !== entity2.id && entity2.owner !== entity.id &&
-					collisionType !== 'bulletbullet' && entity.intersects(entity2)) {
-					
-					// Handle different collision types
-					switch(entity.type+entity2.type) {
-						// Player collides with a bullet
-						case 'playerbullet':
- 						case 'objectbullet': entity.handleHit(entity2); break;
-						case 'bulletplayer':
-						case 'bulletobject': entity2.handleHit(entity); break;
-
-						// Player collides with a power up
-						case 'powerupplayer': entity.activate(entity2); break;
-						case 'playerpowerup': entity2.activate(entity); break;
-
-						// All other collisions
-						default: this._handleCollision(entity, entity2); break;
-					}
-				}
-			}
 
 			// Add entities to new array and mapping
 			newMap[ entity.id ] = newEntities.push(entity) - 1;
@@ -256,6 +269,8 @@
 		 */
 		normal = vec3.subtract(entity1.pos, entity2.pos, vec3.create());
 		vec3.normalize(normal);
+
+		
 
 		// Using the unit normal vector above, calculate the unit tangent vector
 		tangent = vec3.create([ -normal[1], normal[0], 0 ]);

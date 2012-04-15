@@ -326,7 +326,7 @@
 
 	Renderer.prototype._renderPowerup = function(ctx, powerup) {
 		var size = powerup.radius,
-			name = powerup.subtype;
+			name = powerup.id;
 
 		ctx.fillStyle = powerup.subtype === 'shield' ? 'cyan' : 'green';
 		ctx.beginPath();

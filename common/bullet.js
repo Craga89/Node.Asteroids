@@ -25,6 +25,8 @@
 		duration: 750,
 		lifespan: 750,
 		strength: 30,
+
+		mass: 0.5,
 		radius: 2
 	};
 

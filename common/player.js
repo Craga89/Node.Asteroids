@@ -113,6 +113,11 @@
 		if(val !== this.shield) {
 			this.shield = val;
 			this.registerChange('shield', Math.floor(val));
+
+			if(this.shield <= 0) {
+				this.registerChange('remove');
+				this.registerEvent('destroy');
+			}
 		}
 	};
 

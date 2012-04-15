@@ -89,53 +89,6 @@
 		}
 	};
 
-	
-	Player.prototype.handleCollision = function(player) {
-		var R = 1,
-			m1 = this.mass, m2 = player.mass,
-			v1 = this.velocity, v2 = player.velocity,
-			p1 = this.pos, p2 = player.pos,
-			dm = m2 / m1,
-			dx = p2[0] - p1[0],
-			dy = p2[1] - p1[1],
-			dvx = v2[0] - v1[0],
-			dvy = v2[1] - v1[1],
-			a, dvx2, vxCM, vxCM;
-
-		// Don't do anything it balls aren't touching (stop it!)
-		if( dvx * dx + dvy * dy >= 0 ) { return; }
-console.log(vec3.str(v1))
-
-		// Update velocities
-		a = dy / dx;
-		dvx2 = -2 * (dvx + a * dvy) / (( 1 + a*a ) * ( 1 + dm));
-		v2[0] += dvx2;
-		v2[1] += a * dvx2;
-		v1[0] -= dm * dvx2;
-		v1[1] -= a * dm * dvx2;
-
-		// Two-dimensional inelastic equations
-		vxCM = (m1 * v1[0] + m2 * v2[0]) / (m1 + m2);
-		vyCM = (m1 * v1[1] + m2 * v2[1]) / (m1 + m2);
-		v1[0] = (v1[0] - vxCM) * R + vxCM;
-		v1[1] = (v1[1] - vyCM) * R + vyCM;
-		v2[0] = (v2[0] - vxCM) * R + vxCM;
-		v2[1] = (v2[1] - vyCM) * R + vyCM;
-
-		console.log(vec3.str(v1))
-
-		// Adjust shield strengths
-		//this.adjustShield( -((1 - Math.abs(bci)) * 15) );
-		//player.adjustShield( -((1 - Math.abs(aci)) * 15) );
-
-		// Register velocity changes
-		this.registerChange('velocity');
-		player.registerChange('velocity');
-
-		// Register event
-		this.registerEvent('collision', player.id);
-	};
-
 	Player.prototype.handleHit = function(bullet) {
 		var shield = this.shield,
 			amount = bullet.strength * this.shieldQuality;
