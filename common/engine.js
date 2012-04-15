@@ -247,7 +247,8 @@
 	Game.prototype._handleCollision = function(entity1, entity2) {
 		var m1 = entity1.mass, m2 = entity2.mass, ms = m1 + m2,
 			v1 = entity1.velocity, v2 = entity2.velocity,
-			normal, distance, tangent, v1n, v1t, v2n, v2t, vd1n, vd2n, adjust1, adjusted2;
+			normal, distance, tangent, v1n, v1t, v2n, v2t, vd1n, vd2n,
+			adjust, adjust1, adjusted2;
 
 		/*
 		 * Calculate our uni normal vector, which is the difference between the two
@@ -273,18 +274,17 @@
 		vec3.add( vec3.scale(normal, vd1n, []), vec3.scale(tangent, v1t, []), v1);
 		vec3.add( vec3.scale(normal, vd2n, []), vec3.scale(tangent, v2t, []), v2);
 
-		console.log(entity1.id, entity2.id, m2 / m1);
+		// Calculate health/shield adjustment based on the velocities and masses
+		adjust = -Math.abs((m2 / m1) * (v2n / v2n));
 
-		
-		/*
 		// Adjust entity shield strengths if possible
-		adjusted1 = entity1.adjustShield && entity1.adjustShield( -((1 - Math.abs(bci)) * 15) );
-		adjusted2 = entity2.adjustShield && entity2.adjustShield( -((1 - Math.abs(aci)) * 15) );
+		adjusted1 = entity1.adjustShield && entity1.adjustShield(adjust * 3);
+		adjusted2 = entity2.adjustShield && entity2.adjustShield((1 / adjust) * 3);
 
 		// Adjust entity health if possible (and we haven't adjusted anything else)
-		entity1.adjustHealth && !adjusted1 && entity1.adjustHealth( -((1 - Math.abs(bci)) * 15) );
-		entity2.adjustHealth && !adjusted2 && entity2.adjustHealth( -((1 - Math.abs(aci)) * 15) );
-*/
+		entity1.adjustHealth && !adjusted1 && entity1.adjustHealth(adjust * 3);
+		entity2.adjustHealth && !adjusted2 && entity2.adjustHealth((1 / adjust) * 3);
+
 		// Register velocity changes
 		entity1.registerChange('velocity');
 		entity2.registerChange('velocity');

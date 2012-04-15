@@ -61,14 +61,22 @@
 	};
 
 	/**
+	 * Sets up the entity with the pass parameters
+	 * and entity default values
+	 */
+	Entity.prototype.setup = function(params) {
+		var cons = this.constructor;
+		return Entity._merge(cons, this, cons.defaults, params);
+	}
+	
+	/**
 	 * Sets entity parameters to passed values
 	 *
 	 * This only effects the Entity defaults for the
 	 * particular subclass (Player, Bullet etc)
 	 */
 	Entity.prototype.set = function(params) {
-		var cons = this.constructor;
-		return Entity._merge(cons, this, cons.defaults, params);
+		return Entity._merge(this.constructor, this,  params);
 	}
 
 	/**

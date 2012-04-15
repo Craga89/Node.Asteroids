@@ -116,7 +116,7 @@
 	 * Determines if the Entity is outside the world parameters
 	 */
 	Entity.prototype.outsideWorld = function(width, height) {
-		var r = this.radius, adjust = r + r,
+		var r = this.radius, adjust = 0,
 			minX = this.pos[0] + adjust < r, maxX = this.pos[0] + r - adjust > width,
 			minY = this.pos[1] + adjust < r, maxY = this.pos[1] + r - adjust > height;
 
