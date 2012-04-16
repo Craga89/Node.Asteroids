@@ -39,8 +39,7 @@
 		var game = this._game,
 			id = this.id,
 			pos = this.pos,
-			vel = this.velocity,
-			outside, player;
+			vel = this.velocity;
 
 		// Set last pos
 		vec3.set(pos, this.lastPos);

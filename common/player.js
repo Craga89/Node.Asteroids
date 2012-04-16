@@ -10,13 +10,11 @@
 	/**
 	 * Player class
 	 *
-	 * Represent an object within the game
+	 * Represent aa player within the game
 	 */
-	function Player(params, game) {
-		this._game = game;
-
-		// Set our parameters
-		this.setup(params);
+	function Player(subclass) {
+		// Merge Entity defaults with subclasses
+		Entity._merge(Player, subclass.defaults, Player.defaults, subclass.defaults);
 	}
 
 	// Defaults
@@ -26,8 +24,8 @@
  
 		'acceleration': [0.99, 0.99, 0 ],
 		'thrust': 0,
-		'rotateBy': 0,
-		'angularVel': Math.PI / 8,
+		'angularVel': 0,
+		'turnSpeed': Math.PI / 12,
 		
 		'shield': 100,
 		'shieldMax': 100,
@@ -62,8 +60,8 @@
 		vec3.set(pos, this.lastPos);
 
 		// Add rotation
-		this.angle += this.angularVel * this.rotateBy;
-		if(this.rotateBy) { this.registerChange('angle'); }
+		this.angle += this.angularVel;
+		this.registerChange('angle');
 
 		// Calculate new velocity based on acceleration and thrust
 		vec3.multiply(vel, accel);
@@ -114,6 +112,7 @@
 			this.shield = val;
 			this.registerChange('shield', Math.floor(val));
 
+			console.log(shield)
 			if(this.shield <= 0) {
 				this.registerChange('remove');
 				this.registerEvent('destroy');
@@ -135,26 +134,29 @@
 	};
 
 	Player.prototype.rotate = function(value) {
-		this.rotateBy = value;
+		this.angle = value;
 	};
 
-	Player.prototype.shoot = function() {
+	Player.prototype.setAngularVel = function(val) {
+		this.angularVel = val;
+	}
+
+	Player.prototype.shoot = function(delta) {
 		var game = this._game,
-			state = game.state,
 			pos = this.pos,
 			vel = this.velocity,
 			angle = this.angle,
-			id = 'bullet_' + game.lastID++,
-			bullet;
+			id = 'bullet_' + this.id + '_' + game.lastID++,
+			bullet, pf;
 
 		// Create the new bullet
-		state.entityMap[id] = -1 + state.entities.push((
+		game.queueEntity(
 			bullet = new Bullet({
 				id: id,
 				owner: this.id,
-				pos: [ pos[0], pos[1], pos[2] ],
+				pos: this.estimateNextPos(delta || 1), // Use future position
 				velocity: vec3.create([
-					vel[0] + -Math.sin(angle) * 0.3,
+					vel[0] - Math.sin(angle) * 0.3,
 					vel[1] + Math.cos(angle) * 0.3,
 					0
 				]),
@@ -163,7 +165,7 @@
 				strength: this.bulletStrength
 			},
 			game)
-		));
+		);
 
 		// Register bullet and event
 		bullet.registerChange( bullet.toJSON() );
@@ -173,14 +175,32 @@
 	};
 
 
-	Player.prototype.handleCmd = function(cmd) {
+	function User(params, game) {
+		this._game = game;
+
+		// Set our parameters
+		this.setup(params);
+	}
+
+	// Defaults
+	User.defaults = {
+		'subtype': 'user'
+	};
+
+	// Inherit from Entity
+	User.prototype = new Player(User);
+	User.prototype._super = Player.prototype;
+	User.prototype.constructor = User;
+
+	// Command handler
+	User.prototype.handleCmd = function(cmd) {
 		var player = this;
 
 		// Handle shooting
 		if(!isNaN(cmd.space)) {
 			if((this.shooting = cmd.space)) {
-				this._game.schedule(function() {
-					if(player.shooting) { player.shoot(); }
+				this._game.schedule(function(timeStamp, delta) {
+					if(player.shooting) { player.shoot(delta, timeStamp); }
 					return !!player.shooting;
 				},
 				200, true);
@@ -191,7 +211,7 @@
 
 		// Rotate on left/right
 		if(!isNaN(cmd.left) || !isNaN(cmd.right)) {
-			this.rotate(cmd.left ? -0.35 : cmd.right ? 0.35 : 0);
+			this.setAngularVel((cmd.left ? -1 : cmd.right ? 1 : 0) * this.turnSpeed);
 		}
 
 		// Thrust on up/down
@@ -200,6 +220,79 @@
 		}
 	}
 
-	exports.Player = Player;
+	
+
+	function Bot(params, game) {
+		this._game = game;
+
+		// Set our parameters
+		this.setup(params);
+	}
+
+	// Defaults
+	Bot.defaults = {
+		'subtype': 'bot',
+ 
+		'velocity': [ 0, 0, 0],
+		'turnSpeed': Math.PI / 6,
+		'accuracy': 1,
+
+		'following': false,
+
+		'range': 400,
+		'followRange': 600
+	};
+
+	// Inherit from Entity
+	Bot.prototype = new Player(Bot);
+	Bot.prototype._super = Player.prototype;
+	Bot.prototype.constructor = Bot;
+
+	Bot.prototype.computeState = function(delta) {
+		var player = this._game.getPlayerById('Craig');
+		if(player) { this.follow(delta, player); }
+
+		this._super.computeState.call(this, delta);
+	}
+
+	Bot.prototype.follow = function(delta, entity) {
+		// Calculate the distance between the two entities
+		var bot = this,
+			dPos = vec3.subtract(this.pos, entity.pos, vec3.create()),
+			dTotal = vec3.length(dPos),
+			targetAngle, shoot,
+			runaway = false;
+
+		// Check if the target is within the bot range
+		if(dTotal <= (this.thrust ? this.range : this.followRange)){
+			// Determine target angle (run away or follow)
+			targetAngle = Math.atan2(dPos[1], dPos[0]) + Math.PI / 2;
+			if(entity.shield > this.shield) { runaway = true; targetAngle = -targetAngle; }
+
+			// Grade into the new angle
+			if(this.angle !== targetAngle) {
+				// Add rotation
+				theta = (this.angle < targetAngle ? 1 : -1) * this.turnSpeed;
+				
+				if((theta / this.angle) < this.accuracy) { this.angle = targetAngle; }
+				else { this.angle += theta; };
+ 
+				this.registerChange('angle');
+			}
+
+			// Match thrust ( or full thrust if running away!)
+			this.thrust = 0.01 * Math.min(1, runaway ? 1 : (dTotal / this.range) * 2);
+
+			// Set flag
+			shoot = true;
+		}
+
+		// Reset thrust and shooting flag
+		else { this.thrust = 0; shoot = false; }
+	}
+
+	exports = CLIENT ? (exports.Players = {}) : exports;
+	exports.User = User;
+	exports.Bot = Bot;
 
 })(typeof global === 'undefined' ? window : exports, typeof global === 'undefined');

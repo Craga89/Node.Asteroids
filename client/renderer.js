@@ -29,34 +29,42 @@
 	}
 
 	function Renderer(params) {
-		var self = this, width, height, i;
+		var self = this, width, height, vWidth, vHeight, i;
 
 		this.game = params.game;
 		this.canvas = document.getElementById(params.id);
 		this.ctx = this.canvas.getContext('2d');
+		this.minimap = document.getElementById('minimap');
+		this.mctx = this.minimap.getContext('2d');
 
 		// Viewport
 		this.viewport = new Viewport(
-			this.canvas.width = window.innerWidth,
-			this.canvas.height = window.innerHeight,
+			vWidth = window.innerWidth,
+			vHeight = window.innerHeight,
 			width = game.WIDTH,
 			height = game.HEIGHT
 		);
 
 		// Ensure viewport updates with window resize
-		window.onresize = function() {
+		function resize() {
 			self.viewport.centre = [
 				(self.viewport.width = self.canvas.width = window.innerWidth) / 2,
 				(self.viewport.height = self.canvas.height = window.innerHeight) / 2
 			]
+
+			var t = Math.min(vWidth / width, vHeight / height);
+
+			self.minimap.width = width * 0.15 * t * 1.2;
+			self.minimap.height = height * 0.15 * t * 1.2;
 		}
+		window.onresize = resize; resize();
 
 		// Canvas cache
 		this.cache = {};
 
 		// Flags
 		this.drawDirection = params.showDirection || false;
-		this.drawBoundary = params.drawBoundary || true;
+		this.drawBoundary = params.drawBoundary || false;
 
 		// Create some stars
 		this.stars = [];
@@ -84,56 +92,6 @@
 		func.call(this, ctx);
 
 		return canvas;
-	};
-
-	Renderer.prototype.render = function(coords) {
-		// Only proceed if we can grab a reference to our player
-		if(!this.game.me) { return; }
-
-		var self = this,
-			ctx = this.ctx,
-			game = this.game,
-			canvas = this.canvas,
-			entities = game.state.entities,
-			viewport = this.viewport,
-			entity, i, t;
-
-		// If we aren't rendering a specific canvas area...
-		if(typeof coords === 'undefined') {
-			// Clear the canvas and use black background
-			ctx.clearRect(0, 0, canvas.width, canvas.height);
-			ctx.fillStyle = 'rgb(20,20,20)';
-			ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-			if(game.WIDTH > viewport.width || game.HEIGHT > viewport.height) {
-				// Make viewport follow the player
-				viewport.pos[0] = game.WIDTH > viewport.width ? game.me.pos[0] : viewport.centre[0];
-				viewport.pos[1] = game.HEIGHT > viewport.height ? game.me.pos[1] : viewport.centre[1];
-
-				// Render adjacent world tiles if needed
-				this._drawTiles(ctx);
-			}
-		}
-
-		// Set viewport position if coordinates were passed...
-		else { vec3.set(coords, this.viewport.pos); }
-
-		// Draw the stars
-		this._drawStars(ctx);
-
-		// Render all objects
-		for(i in entities) {
-			// Check to make sure the entity isn't removed
-			if((entity = entities[i]).remove) { continue };
-
-			// Render the entity
-			this.renderEntity(ctx, entity);
-		}
-
-		// Draw the viewport boundaries
-		if(typeof coords === 'undefined' && this.drawBoundary) {
-			viewport.drawBounds(ctx);
-		}
 	};
 
 	Renderer.prototype._drawTiles = function(ctx) {
@@ -180,7 +138,7 @@
 		ctx.translate(Math.round(x), Math.round(y));
 
 		// Render the tile
-		this.render(coords);
+		this.renderTile(ctx, coords);
 
 		// Reset viewport coordinates and restore canvas
 		vec3.set(oldPos, viewport.pos);
@@ -202,6 +160,94 @@
 		ctx.translate(coords[0], coords[1]);
 		ctx.drawImage(this.cache.stars, 0, 0);
 		ctx.restore();
+	};
+
+	Renderer.prototype.render = function(coords) {
+		// Only proceed if we can grab a reference to our player
+		if(!this.game.me) { return; }
+
+		var self = this,
+			ctx = this.ctx,
+			game = this.game,
+			canvas = this.canvas,
+			entities = game.state.entities,
+			viewport = this.viewport,
+			entity, i, t;
+
+		// Clear the canvas and use black background
+		ctx.clearRect(0, 0, canvas.width, canvas.height);
+		ctx.fillStyle = 'rgb(20,20,20)';
+		ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+		// Make viewport follow the player and draw adjacent tiles if needed
+		if(game.WIDTH > viewport.width || game.HEIGHT > viewport.height) {
+			viewport.pos[0] = game.WIDTH > viewport.width ? game.me.pos[0] : viewport.centre[0];
+			viewport.pos[1] = game.HEIGHT > viewport.height ? game.me.pos[1] : viewport.centre[1];
+
+			// Render adjacent world tiles if needed
+			this._drawTiles(ctx);
+		}
+
+		// Render the tile
+		this.renderTile(ctx);
+		
+		// Draw the viewport boundaries if enabled
+		if(this.drawBoundary) { viewport.drawBounds(ctx); }
+
+		// Render the minimap
+		this.renderMinimap(this.mctx);
+	};
+
+	Renderer.prototype.renderTile = function(ctx, coords) {
+		var self = this,
+			entities = game.state.entities,
+			viewport = this.viewport,
+			entity, i, t;
+
+		// Set coordinates if passed
+		if(coords) { vec3.set(coords, viewport.pos); }
+
+		// Draw the stars
+		this._drawStars(ctx);
+
+		// Render all objects
+		for(i in entities) {
+			// Check to make sure the entity isn't removed
+			if((entity = entities[i]).remove) { continue };
+
+			// Render the entity
+			this.renderEntity(ctx, entity);
+		}
+	}
+
+	Renderer.prototype.renderMinimap = function(ctx) {
+		var minimap = this.minimap,
+			entities = this.game.state.entities,
+			ratio = minimap.width / this.game.WIDTH,
+			isMe;
+
+		// Clear canvas
+		ctx.globalAlpha = 1;
+		ctx.fillStyle = 'rgba(0,0,0,0.1)';
+		ctx.fillRect(0, 0, minimap.width, minimap.height);
+
+		// Render all objects
+		for(i in entities) {
+			// Check to make sure the entity should be drawn
+			if((entity = entities[i]).remove || (entity.type !== 'player' && entity.subtype !== 'asteroid')) { continue };
+			isMe = this.game.me === entity;
+
+			// Render the entity
+			ctx.save();
+			ctx.globalAlpha = entity.type === 'player' ? 1 : 0.5;
+			ctx.fillStyle = entity.type === 'player' ? isMe ? 'green' : 'rgb(0, 100, 255)' : 'brown';
+			ctx.translate(entity.pos[0] * ratio, entity.pos[1] * ratio);
+			ctx.beginPath();
+			ctx.arc(0, 0, isMe ? 2 : entity.radius * ratio, 0, 2* Math.PI, true);
+			ctx.closePath();
+			ctx.fill();
+			ctx.restore();
+		}
 	};
 
 	Renderer.prototype.renderEntity = function(ctx, entity, bounds) {

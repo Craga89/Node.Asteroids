@@ -26,7 +26,7 @@
 		lifespan: 750,
 		strength: 30,
 
-		mass: 620,
+		mass: 0.5,
 		radius: 2
 	};
 
@@ -39,8 +39,9 @@
 		var game = this._game,
 			id = this.id,
 			pos = this.pos,
-			vel = this.velocity,
-			outside, player;
+			vel = this.velocity;
+
+			console.log(this.id)
 
 		// Set last pos
 		vec3.set(pos, this.lastPos);

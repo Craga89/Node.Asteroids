@@ -10,8 +10,34 @@ a {
   color: #00B7FF;
 }
 
-canvas{
+canvas#game{
 	position: absolute;
 	left: 0; top: 0;
 	display: block;
+}
+
+#warning{
+	position: absolute;
+	bottom: 0;
+	right: 0;
+
+	border: 2px solid red;
+	border-width: 1px 0 0 1px;
+
+	background-color: #FF4A4A;
+	color: white;
+
+	font-size: 16px;
+}
+
+
+canvas#minimap{
+	position: absolute;
+	bottom: 10px;
+	left: 10px;
+
+	border: 2px solid rgb(0, 100, 255);
+	border-radius: 3px;
+
+	opacity: 0.8;
 }

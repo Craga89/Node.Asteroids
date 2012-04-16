@@ -33,11 +33,9 @@ game.start();
 // Add some random players
 var count = 0;
 game.schedule(function() {
-	if(count < 6) {
-		var t = this.addBot('Bot'+(Math.floor(Math.random() * 100) / 100));
-		count++;
-	}
-	
+	var t = this.addBot('Bot'+(Math.floor(Math.random() * 100) / 100));
+
+	return count++ < 6
 },
 1000, true);
 

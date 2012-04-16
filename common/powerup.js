@@ -104,8 +104,7 @@
 		// Call super-class method
 		this._super.activate.apply(this, arguments);
 	}
-	
-	//exports.Powerup = Powerup;
+
 	exports = CLIENT ? (exports.Powerups = {}) : exports;
 	exports.Shield = Shield;
 	exports.ShieldUp = ShieldUp;

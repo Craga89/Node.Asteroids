@@ -1,7 +1,7 @@
 (function(exports, CLIENT) {
 	var Sequence = (CLIENT ? exports : require('./sequence')).Sequence,
 		Timer = (CLIENT ? exports : require('./timer')).Timer,
-		Player = (CLIENT ? exports : require('./player')).Player,
+		Players = (CLIENT ? exports.Players : require('./player')),
 		Bullet = (CLIENT ? exports : require('./bullet')).Bullet,
 		Asteroid = (CLIENT ? exports : require('./asteroid')).Asteroid,
 		Powerups = (CLIENT ? exports.Powerups : require('./powerup'));
@@ -35,9 +35,11 @@
 		this.stateBuffer = [];
 		this.updateCount = 0;
 
-		// User command buffer
+		// Buffers
+		this.entityBuffer = [];
 		this.commandBuffer = {};
 		this.scheduleBuffer = [];
+		this.collisionBuffer = {};
 
 		// Trackers
 		this.me = null;
@@ -49,17 +51,14 @@
 			game.onTick && game.onTick(date);
 		});
 
-		// Setup client smooth timer
-		this.smoothTimer = new Timer(this.SMOOTH_TIME);
-
 		// Event handler
 		this.eventHandler = handler || { fire: function() {} }
 	};
 
 	Game.instanceMap = {
 		'player': {
-			'player': Player,
-			'bot': Player
+			'user': Players.User,
+			'bot': Players.Bot
 		},
 		'object': {
 			'asteroid': Asteroid
@@ -73,11 +72,15 @@
 		}
 	};
 
-	Game.prototype._instantiate = function(entity) {
-		var constr = (Game.instanceMap[entity.type] || {})[entity.subtype];
+	Game.prototype._instantiateType = function(type, subtype, entity) {
+		var constr = (Game.instanceMap[type] || {})[subtype];
 
 		// Depending on type, instantiate.
 		return constr ? new constr(entity, this) : false;
+	}
+
+	Game.prototype._instantiate = function(entity) {
+		return this._instantiateType(entity.type, entity.subtype, entity);
 	}
 
 	Game.prototype.update = function(timeStamp) {
@@ -101,8 +104,8 @@
 	};
 
 	Game.prototype.schedule = function(callback, ms, repeat) {
-		callback._ms = ms;
-		this.scheduleBuffer.push([ callback, ms, repeat ]);
+		callback._ms = ms || 0; callback._timeStamp = Date.now();
+		this.scheduleBuffer.push([ callback, ms || 0, repeat ]);
 	};
 
 	Game.prototype.queueCommand = function(id, data) {
@@ -153,16 +156,23 @@
 		var state = this.state,
 			schedule = this.scheduleBuffer,
 			entities = state.entities,
+			entityBuffer = this.entityBuffer,
 			entityCount, entity, entity2, outside, 
 			commands, command, collisionType,
 			ongoingSchedules = [], newEntities = [],
-			newMap = {}, i, result, j, task;
+			newMap = {}, i, result, j, task, colDelta;
 
 		// Reset the delta state
 		this.deltaState = {};
 
 		// Set the state timestamp
 		state.timeStamp = this.state.timeStamp + delta;
+
+		// Add any buffered entities
+		i = entityBuffer.length;
+		while((entity = entityBuffer[--i])) {
+			state.entityMap[ entity.id ] = entities.push( entityBuffer.shift() ) - 1;
+		}
 
 		// Execute user commands first
 		i = entities.length;
@@ -178,11 +188,12 @@
 		// Execute scheduled changes
 		i = schedule.length;
 		while((task = schedule[--i])) {
-			result = (task[1] -= delta) <= 0 ? task[0].call(this, delta) : true;
+			result = (task[1] -= delta) <= 0 ? task[0].call(this, Date.now(), delta) : true;
 			if(task[1] > 0 || (task[2] && result !== false && (task[1] = task[0]._ms))) {
 				ongoingSchedules.push(task);
 			}
 		}
+		this.scheduleBuffer = ongoingSchedules;
 
 		// Check for intersections and world boundaries
 		entityCount = entities.length;
@@ -196,6 +207,16 @@
 			for(j = i + 1; j < entityCount; j++) {
 				if(!(entity2 = entities[j]) || entity2.remove) { continue; }
 				collisionType = entity.type + entity2.type;
+
+
+				/**
+				 * Check to see if an intersectio is about to occur between the two
+				 * objects within the next time tick.... if so, we need to adjust the
+				 * position of first object to ensure it's in the correct position so
+				 * our elastic collision angles are precise.
+				 */
+				colDelta = entity.predictIntersection(entity2, delta, 0, 1);
+				if(colDelta) { entity.computeState(colDelta[0]); }
 
 				/*
 				 * Check intersection of the two objects if:
@@ -231,7 +252,7 @@
 				}
 			}
 
-			// Compute new state and register it
+			// Otherwise just compute the new state using our delta
 			entity.computeState(delta);
 
 			// Loop entitys round the world
@@ -240,15 +261,13 @@
 				if(outside[1] !== 0) { entity.pos[1] += (outside[1] < 0 ? 1 : -1) * this.HEIGHT }
 			}
 
-
 			// Add entities to new array and mapping
 			newMap[ entity.id ] = newEntities.push(entity) - 1;
 		}
 
 		// Reset objects
-		this.state.entities = newEntities;
+		this.state.entities = newEntities.concat();
 		this.state.entityMap = newMap;
-		this.scheduleBuffer = ongoingSchedules;
 	};
 
 	/*
@@ -270,8 +289,6 @@
 		normal = vec3.subtract(entity1.pos, entity2.pos, vec3.create());
 		vec3.normalize(normal);
 
-		
-
 		// Using the unit normal vector above, calculate the unit tangent vector
 		tangent = vec3.create([ -normal[1], normal[0], 0 ]);
 
@@ -281,8 +298,6 @@
 
 		// Calculate the new normal velocities using the 1-dimensional elastic body equations
 		vd1n = (v1n*(m1 - m2) + 2*(m2 * v2n)) / ms; vd2n = (v2n*(m2 - m1) + 2*(m1 * v1n)) / ms;
-
-		if(vd1n < 0 && vd2n < 0) console.log(entity1.id, entity2.id, vd1n, vd2n);
 
 		/*
 		 * Final velocities are then calculated by adding together one unit vector
@@ -310,21 +325,26 @@
 		entity1.registerEvent('collision', entity2.id);
 	}
 
-	Game.prototype._addPlayer = function(data) {
+	Game.prototype.queueEntity = function(entity) {
+		return this.entityBuffer.push(entity), entity;
+	};
+
+	Game.prototype._addEntity = function(entity) {
+		return this.state.entityMap[ entity.id ] = this.state.entities.push(entity) - 1, entity;
+	};
+
+	Game.prototype._addPlayer = function(type, data) {
 		var entities = this.state.entities, player;
 
 		// Create player
-		player = new Player(data, this);
-
-		// Push entity onto state
-		this.state.entityMap[ data.id ] = this.state.entities.push(player) - 1;
+		player = this._instantiateType('player', type, data);
 
 		// Find the next closest slot available and map it
-		return player;
+		return this._addEntity(player);
 	};
 
 	Game.prototype.join = function(id, data) {
-		return this._addPlayer(data || {
+		return this._addPlayer('user', data || {
 			id: id,
 			pos: vec3.create([
 				random(0, this.WIDTH),
@@ -335,9 +355,8 @@
 	};
 
 	Game.prototype.addBot = function(id) {
-		var e = this._addPlayer({
+		var e = this._addPlayer('bot', {
 			id: id,
-			subtype: 'bot',
 			pos: vec3.create([
 				random(0, this.WIDTH),
 				random(0, this.HEIGHT),

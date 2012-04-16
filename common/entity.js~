@@ -137,23 +137,84 @@
 
 	/*
 	 * Determines if two balls are going to intersect at current speed/angle
+	 *
+	 * Taken from the following forum post by user Zylum
+	 * 	http://compsci.ca/v3/viewtopic.php?t=14897
 	 */
 	Entity.prototype.willIntersect = function(entity) {
-		var t = entity.type+this.type;
-		if(t === 'playerpowerup' || t === 'powerupplayer'){
-			var asdf = entity.type === 'player' ? this : entity;
-			console.log(asdf.id, asdf.constructor, asdf.velocity[0], asdf.velocity[1])
+		var p1 = this.pos, p2 = entity.pos, v1 = this.velocity, v2 = entity.velocity;
+		return (p2[0] - p1[0]) * (v1[0] - v2[0]) + (p2[1] - p1[1]) * (v1[1] - v2[1]) > 0;
+	};
+
+	/**
+	 * Determines the precise time two entities will intersect using
+	 * a Sewpt Sphere quadratic algorithm.
+	 *
+	 * Formulae borrowed heavily from the Gamasutra Intersection tutorials
+	 * 	http://www.gamasutra.com/view/feature/131790/simple_intersection_tests_for_games.php?page=2
+	 */
+	Entity.prototype.predictIntersection = function(entity, delta, tmin, tmax) {
+		var p0 = this.pos, q0 = entity.pos,
+			pf = this.estimateNextPos(-delta),
+			qf = entity.estimateNextPos(-delta),
+			va = vec3.subtract(p0, pf, []),
+			vb = vec3.subtract(q0, qf, []),
+			ab = vec3.subtract(qf, pf, []),
+			vab = vec3.subtract(vb, va, []),
+			rab = this.radius + entity.radius,
+			rab2 = rab * rab,
+			abab = vec3.dot(ab, ab),
+			a, b, c, t0, t1, temp, q;
+
+		// Check if they overlap at all...
+		if(vec3.dot(ab, ab) <= rab2) { return NaN; }
+
+		// Check if they hit during the fame
+		else {
+			// Use the quadratic forumlae to solve
+			a = vec3.dot(vab, vab);
+			b = 2 * vec3.dot(vab, ab);
+			c = abab - rab2;
+			q = b * b - 4 * a * c;
+
+			// Check we have a REAL root
+			if(q > 0) {
+				var sq = Math.sqrt(q);
+				var d = 1 / (2 * a );
+
+				/*
+				 * First solution represents the time the objects were barely touching
+				 * on the way _into_ the collision, and the second on the way _out_
+				 */
+				t0 = temp = ( -b + sq ) * d;
+				t1 = ( -b - sq ) * d;
+
+				// Swap values to make sure smallest is first
+				t0 = t0 > t1 ? t1 : t0;
+				t1 = t0 === t1 ? temp : t1;
+				return t0 > tmax || t1 < tmin ? NaN : [ t0, t1 ];
+			}
 		}
-		return true;
+
+		return NaN;
+	};
+
+	/*
+	 * Estimates the next position of this entity using delta, assuming constant
+	 * velocity (not entirely accurate but a small time-step should alleviate it)
+	 */
+	Entity.prototype.estimateNextPos = function(delta) {
+		var pos = this.pos, vel = this.velocity;
+		return vec3.create([ pos[0] + vel[0] * delta, pos[1] + vel[1] * delta, 0 ]);
 	};
 
 	/**
 	 * Determines if the Entity is outside the world parameters
 	 */
 	Entity.prototype.outsideWorld = function(width, height) {
-		var r = this.radius, adjust = 0,
-			minX = this.pos[0] + adjust < r, maxX = this.pos[0] + r - adjust > width,
-			minY = this.pos[1] + adjust < r, maxY = this.pos[1] + r - adjust > height;
+		var r = this.radius,
+			minX = this.pos[0] < r, maxX = this.pos[0] + r > width,
+			minY = this.pos[1] < r, maxY = this.pos[1] + r > height;
 
 		// If any of the conditions are true... return array
 		if(minX || maxX || minY || maxY) {

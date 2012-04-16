@@ -1,5 +1,6 @@
 var playerID = null,
-	totalSkew = 0;
+	totalSkew = 0,
+	timer;
 
 // Setup socket.io connection
 var socket = io.connect('http://192.168.1.68:3050');
@@ -12,12 +13,25 @@ var handler = new EventHandler({
 
 	collision: function(id, id2) {
 		var entity = this.getEntityById(id),
-			entity2 = this.getEntityById(id2);
+			entity2 = this.getEntityById(id2),
+			warning = document.getElementById('warning');
 
 		if(entity.subtype === 'player' ||
 			entity2.subtype === 'player') {
 			soundManager.play('collision');
 		}
+
+		warning.style.display = 'none';
+	},
+
+	collisionwarning: function(id, who, when) {
+		var warning = document.getElementById('warning');
+
+		warning.style.display = 'block';
+		warning.innerHTML = 'Warning! Collision with ' + who + 'in ' + (when) + ' seconds!';
+		
+		clearTimeout(timer);
+		setTimeout(function() { warning.style.display = 'none'; }, 4000);
 	},
 
 	powerup: function(player) {
@@ -139,11 +153,12 @@ socket.on('start', function(data) {
 	console.log(data.state);
 
 	// Start game and renderer
+	//game.start();
 	//renderer.start();
 
 	// join the game
 	socket.emit('join', {
-		name: 'Craig' + Math.floor(Math.random() * 100)
+		name: 'Craig'
 	});
 
 	// Fire start event

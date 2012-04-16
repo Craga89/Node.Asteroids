@@ -14,8 +14,7 @@
 	// Defaults
 	Powerup.defaults = {
 		type: 'powerup',
-		mass: 0,
-		velocity: [0.1,0.1,0]
+		mass: 0
 	}
 
 	// Inherit from Entity

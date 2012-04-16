@@ -18,7 +18,7 @@ Level.generate = function(game) {
 
 	// Add some power ups
 	for(i in Powerups) {
-		for(j = 0; j < random(2, 20); j++) {
+		for(j = 0; j < random(2, 13); j++) {
 			id = 'powerup_' + (game.lastID++);
 			state.entityMap[id] = -1 + state.entities.push(
 				new Powerups[i]({
@@ -46,7 +46,7 @@ Level.generate = function(game) {
 					0
 				],
 				angularVelocity: random(0.2, Math.PI / 10),
-				radius: random(4, 40),
+				radius: random(4, 35),
 				velocity: [
 					random(-2, 2) / 100,
 					random(-2, 2) / 100,
