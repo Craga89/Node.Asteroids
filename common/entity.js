@@ -36,7 +36,6 @@
 
 	/**
 	 * Merges two Entitys of the same constructor together.
-	 *
 	 */
 	Entity._merge = function(cons, dest, obj, obj2) {
 		var func = cons._mergeFunc, props, p, i;
@@ -50,7 +49,7 @@
 				for(p in props) {
 					func += 'val = obj3 && typeof obj3.'+p+' !== "undefined" ? obj3.'+p+' : obj2.'+p+';' +
 						'if(typeof val !== "undefined") {' +
-							'obj.'+p+' = val.splice || val.buffer ? [ val[0], val[1], val[2] ] : val;' +
+							'obj.'+p+' = val && (val.splice || val.buffer) ? [ val[0], val[1], val[2] ] : val;' +
 						'} ';
 				}
 			}
@@ -237,10 +236,10 @@
 		this._game.registerEvent(args);
 	}
 	
-	Entity.prototype.destroy = function() {
+	Entity.prototype.destroy = function(killer) {
 		this.remove = true;
 		this.registerChange('remove', true);
-		this.registerEvent('destroy', this.id);
+		this.registerEvent('destroy', killer);
 	};
 
 	exports.Entity = Entity;

@@ -213,9 +213,13 @@
 				 * objects within the next time tick.... if so, we need to adjust the
 				 * position of first object to ensure it's in the correct position so
 				 * our elastic collision angles are precise.
+				 *
+				 * Since this is quite an expensive operation, to it only for players
 				 */
-				colDelta = entity.predictIntersection(entity2, delta, 0, 1);
-				if(colDelta) { entity.computeState(colDelta[0]); }
+				if(entity.type+entity2.type === 'playerplayer') {
+					colDelta = entity.predictIntersection(entity2, delta, 0, 1);
+					if(colDelta) { entity.computeState(colDelta[0]); }
+				}
 
 				/*
 				 * Check intersection of the two objects if:

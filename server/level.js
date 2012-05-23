@@ -1,13 +1,17 @@
 var Player = require('../common/player').Player,
-	Powerups = require('../common/powerup'),
-	Asteroid = require('../common/asteroid').Asteroid;
+	Asteroid = require('../common/asteroid').Asteroid,
+	Powerups = require('../common/powerup');
 
 function random(min, max) {
 	return (Math.random() * (max - min + 1)) + min;
 }
 
+// Base level class
 function Level() { }
 
+/*
+ * Generates a level with random powerups and asteroids
+ */
 Level.generate = function(game) {
 	var state = {
 		entities: [],
@@ -34,6 +38,7 @@ Level.generate = function(game) {
 		}
 	}
 
+	// Add some asteroids
 	i = 20;
 	while(--i) {
 		id = 'asteroid_' + (game.lastID++);

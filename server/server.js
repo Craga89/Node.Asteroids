@@ -23,8 +23,6 @@ game.onTick = function(){
 		timeStamp: Date.now(),
 		state: game.deltaState
 	});
-
-	//console.log(game.deltaState)
 }
 
 // Initialise game loop

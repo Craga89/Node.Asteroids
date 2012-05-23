@@ -35,7 +35,7 @@ var count = 0;
 game.schedule(function() {
 	var t = this.addBot('Bot'+(Math.floor(Math.random() * 100) / 100));
 
-	return count++ < 1
+	return count++ < 6
 },
 1000, true);
 

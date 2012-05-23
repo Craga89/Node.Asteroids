@@ -64,7 +64,7 @@
 
 		// Flags
 		this.drawDirection = params.showDirection || false;
-		this.drawBoundary = params.drawBoundary || true;
+		this.drawBoundary = params.drawBoundary || false;
 
 		// Create some stars
 		this.stars = [];
@@ -324,11 +324,7 @@
 		if(player.shield > 0) {
 			ctx.lineWidth = shield * 4;
 			ctx.fillStyle = 'rgba(255,255,255,0.1)';
-			ctx.strokeStyle = 'rgb('+
-				Math.floor(255 - (shield * 255)) + ', ' +
-				Math.floor(80 - (shield * 80)) + ', ' +
-				Math.floor(shield * 255) +
-			')';
+			ctx.strokeStyle = 'blue';
 			ctx.beginPath();
 			ctx.arc(0, 0, radius - (shield*2), 0, 2 * Math.PI, true);
 			ctx.closePath();

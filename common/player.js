@@ -32,7 +32,9 @@
 		'shieldQuality': 0.5,
 		'shieldRegen': 0.065,
 		'shieldPause': 0,
-		
+
+		'kills': 0,
+
 		'weapon': 'Bullet',
 		'shooting': false,
 		'shootRate': 150,
@@ -89,13 +91,19 @@
 
 	Player.prototype.handleHit = function(bullet) {
 		var shield = this.shield,
-			amount = bullet.strength * this.shieldQuality;
+			amount = bullet.strength * this.shieldQuality,
+			owner;
 
-		// If shield is zero and we got hit... die!
-		if((shield - amount) <= 0) { this.destroy(); }
+		// Set the shield
+		this.adjustShield(-amount, false);
 
-		// Reduce shield strength until zero...
-		else{ this.adjustShield(-amount); }
+		// Register a change if we killed a player
+		if(this.shield === 0) {
+			owner = this._game.getPlayerById(bullet.owner);
+			owner.registerChange('kills', ++owner.kills);
+
+			this.destroy(bullet.owner);
+		}
 
 		// Also add a brief pause to shield regen
 		this.shieldPause += (1 - ((shield - amount) / shield)) * 300;
@@ -107,25 +115,22 @@
 		this.registerEvent('hit', bullet.id);
 	};
 
-	Player.prototype.setShield = function(val) {
+	Player.prototype.setShield = function(val, destroy) {
 		if(val !== this.shield) {
 			this.shield = val;
 			this.registerChange('shield', Math.floor(val));
 
-			console.log(shield)
-			if(this.shield <= 0) {
-				this.registerChange('remove');
-				this.registerEvent('destroy');
-			}
+			// Die if the shield is set to zero
+			if(destroy !== false && this.shield <= 0) { this.destroy(); }
 		}
 	};
 
-	Player.prototype.adjustShield = function(amount) {
+	Player.prototype.adjustShield = function(amount, destroy) {
 		var newShield = this.shield + amount;
 
 		// Set shield strength
 		this.setShield(
-			Math.max(Math.min(this.shieldMax, newShield), 0)
+			Math.max(Math.min(this.shieldMax, newShield), 0), destroy
 		);
 	};
 
@@ -201,7 +206,7 @@
 			if((this.shooting = cmd.space)) {
 				this._game.schedule(function(timeStamp, delta) {
 					if(player.shooting) { player.shoot(delta, timeStamp); }
-					return !!player.shooting;
+					return !!player.shooting && !player.remove;
 				},
 				200, true);
 

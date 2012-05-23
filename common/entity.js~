@@ -50,7 +50,7 @@
 				for(p in props) {
 					func += 'val = obj3 && typeof obj3.'+p+' !== "undefined" ? obj3.'+p+' : obj2.'+p+';' +
 						'if(typeof val !== "undefined") {' +
-							'obj.'+p+' = val.splice || val.buffer ? [ val[0], val[1], val[2] ] : val;' +
+							'obj.'+p+' = val && (val.splice || val.buffer) ? [ val[0], val[1], val[2] ] : val;' +
 						'} ';
 				}
 			}
@@ -167,7 +167,7 @@
 			a, b, c, t0, t1, temp, q;
 
 		// Check if they overlap at all...
-		if(vec3.dot(ab, ab) <= rab2) { return NaN; }
+		if(vec3.dot(ab, ab) <= rab2) { return false; }
 
 		// Check if they hit during the fame
 		else {
@@ -192,11 +192,11 @@
 				// Swap values to make sure smallest is first
 				t0 = t0 > t1 ? t1 : t0;
 				t1 = t0 === t1 ? temp : t1;
-				return t0 > tmax || t1 < tmin ? NaN : [ t0, t1 ];
+				return t0 > tmax || t1 < tmin ? false : [ t0, t1 ];
 			}
 		}
 
-		return NaN;
+		return false;
 	};
 
 	/*
@@ -237,10 +237,10 @@
 		this._game.registerEvent(args);
 	}
 	
-	Entity.prototype.destroy = function() {
+	Entity.prototype.destroy = function(killer) {
 		this.remove = true;
 		this.registerChange('remove', true);
-		this.registerEvent('destroy', this.id);
+		this.registerEvent('destroy', killer);
 	};
 
 	exports.Entity = Entity;

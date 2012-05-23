@@ -23,7 +23,7 @@
 		this.WIDTH = 2500;
 		this.HEIGHT = 2500;
 		this.STATES = 300;
-		this.TICK_RATE = Math.round(1000 / 30);
+		this.TICK_RATE = Math.round(1000 / 1);
 		this.CMD_RATE = Math.round(1000 / 30);
 		this.TRANSFER_RATE = 0.05;
 		this.STATE_BUFFER_TIME = this.TICK_RATE * 3;
@@ -208,15 +208,18 @@
 				if(!(entity2 = entities[j]) || entity2.remove) { continue; }
 				collisionType = entity.type + entity2.type;
 
-
 				/**
 				 * Check to see if an intersectio is about to occur between the two
 				 * objects within the next time tick.... if so, we need to adjust the
 				 * position of first object to ensure it's in the correct position so
 				 * our elastic collision angles are precise.
+				 *
+				 * Since this is quite an expensive operation, to it only for players
 				 */
-				colDelta = entity.predictIntersection(entity2, delta, 0, 1);
-				if(colDelta) { entity.computeState(colDelta[0]); }
+				if(entity.type+entity2.type === 'playerplayer') {
+					colDelta = entity.predictIntersection(entity2, delta, 0, 1);
+					if(colDelta) { entity.computeState(colDelta[0]); }
+				}
 
 				/*
 				 * Check intersection of the two objects if:

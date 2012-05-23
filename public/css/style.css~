@@ -38,4 +38,24 @@ canvas#minimap{
 
 	border: 2px solid rgb(0, 100, 255);
 	border-radius: 3px;
+
+	opacity: 0.8;
+}
+
+canvas#minimap:hover{
+	transition-property: all;
+	transition-duration: 0.5s;
+	opacity: 1;
+}
+
+div#kills{
+	position: absolute;
+	right: 0; bottom: 0;
+	padding: 10px;
+
+	font-size: 20px;
+}
+
+div#kills:after{
+	content:' kills'
 }

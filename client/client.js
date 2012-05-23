@@ -46,11 +46,17 @@ var handler = new EventHandler({
 		soundManager.play('laser');
 	},
 
-	destroy: function(id) {
-		var entity = this.getEntityById(id);
-		
+	destroy: function(id, killerid) {
+		var entity = this.getEntityById(id),
+			killer = this.getEntityById(killerid);
+
 		if(entity && entity.type === 'player') {
 			soundManager.play('death');
+		}
+
+		// Add to kill count
+		if(killer && killer.id === this.me.id) {
+			document.getElementById('kills').innerHTML = game.me.kills;
 		}
 	}
 });
@@ -68,6 +74,7 @@ var renderer = new Renderer({
 soundManager.url = '/js/client/swf';
 soundManager.flashVersion = 9;
 soundManager.useHTML5Audio = false;
+soundManager.preferFlash = false;
 soundManager.useFlashBlock = false;
 soundManager.useHighPerformance = true;
 soundManager.useFastPolling = true;
@@ -154,11 +161,11 @@ socket.on('start', function(data) {
 
 	// Start game and renderer
 	//game.start();
-	//renderer.start();
+	renderer.start();
 
 	// join the game
 	socket.emit('join', {
-		name: 'Craig'
+		name: prompt('Choose a username')
 	});
 
 	// Fire start event
@@ -192,13 +199,13 @@ socket.on('leave', function(data) {
 
 // Load game state when recieved
 socket.on('state', function(data) {
-	game.load(data.state);
+	game.load(data.state, false);
 });
 
 // Merge game delta when recieved
 socket.on('delta', function(data) {
 	game.delta(data.state);
-	renderer.render();
+	//renderer.render();
 });
 
 // Handle errors
